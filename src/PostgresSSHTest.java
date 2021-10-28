@@ -3,7 +3,10 @@ import com.jcraft.jsch.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.ResultSet;
 import java.util.Properties;
+import java.util.Scanner;
 
 public class PostgresSSHTest {
 
@@ -13,9 +16,9 @@ public class PostgresSSHTest {
         int lport = 5432;
         String rhost = "starbug.cs.rit.edu";
         int rport = 5432;
-        String user = "username"; //change to your username
-        String password = "password"; //change to your password
-        String databaseName = "databaseName"; //change to your database name
+        String user = "nas9053"; //change to your username
+        String password = "---"; //change to your password
+        String databaseName = "p320_18"; //change to your database name
 
         String driverName = "org.postgresql.Driver";
         Connection conn = null;
@@ -46,6 +49,16 @@ public class PostgresSSHTest {
             System.out.println("Database connection established");
 
             // Do something with the database....
+            userLoop();
+
+            Statement testStatement = conn.createStatement();
+            // System.out.println(conn.);
+            ResultSet rs = testStatement.executeQuery("select * from Account");
+            while (rs.next()) {
+                System.out.print("Column 1 returned ");
+                System.out.println(rs.getString(1));
+            }
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -59,5 +72,31 @@ public class PostgresSSHTest {
                 session.disconnect();
             }
         }
+    }
+
+    private static void userLoop() {
+        Scanner in = new Scanner(System.in);
+        System.out.println("You have been connected to the server. " +
+                "Please log in using by entering your username and password, separated by a space. " +
+                "If you do not have a login, please enter \"!NewUser\"");
+        while (true)
+        {
+            String line = in.nextLine();
+            if (line.toLowerCase().equals("!newuser"))
+            {
+                System.out.println("Creating a new user. What do you want your username to be? (This is displayed publicly, and will be used for prior logins)");
+            }
+            String[] split = line.split(" ");
+            if (split.length != 2 || split[0].length() <= 0 || split[1].length() <= 0)
+            {
+                System.out.println("Your input does not match format requirements. Please input your username and password as:\n<username> <password>");
+                continue;
+            }
+            String username = split[0];
+            String password = split[1];
+
+            break;
+        }
+
     }
 }
