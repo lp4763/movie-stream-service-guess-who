@@ -1,5 +1,8 @@
 import com.jcraft.jsch.*;
 
+import java.io.Console;
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -12,14 +15,29 @@ import java.util.Scanner;
 
 public class PostgresSSHTest {
 
+    private String user;
+    private String password;
+    public PostgresSSHTest() throws IOException {
+        File file = new File("/TxtsAccessible/loginpostgresp320_18.txt");
+        Scanner scan = new Scanner(file);
+        user = scan.nextLine();
+        password = scan.nextLine();
+        scan.close();
+    }
+    public static void main(String[] args) {
 
-    public static void main(String[] args) throws SQLException {
+        try {
+            PostgresSSHTest postgresSSHTest = new PostgresSSHTest();
+            postgresSSHTest.dbConnect();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
+    public void dbConnect() throws SQLException {
 
         int lport = 5432;
         String rhost = "starbug.cs.rit.edu";
         int rport = 5432;
-        String user = "nas9053"; //change to your username
-        String password = "---"; //change to your password
         String databaseName = "p320_18"; //change to your database name
 
         String driverName = "org.postgresql.Driver";
