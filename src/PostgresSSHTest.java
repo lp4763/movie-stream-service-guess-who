@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.Properties;
 import java.util.Scanner;
 
-public class PostgresSSHTest {
+public class PostgresSSHTest{
 
     private String user;
     private String password;
