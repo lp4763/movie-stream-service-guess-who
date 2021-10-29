@@ -1,36 +1,38 @@
-import Application.ConsoleApp;
-import com.jcraft.jsch.*;
+package ParseData;
+
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 
-public class PostgresSSHTest {
-
+public class PopulateDatabase {
     private String user;
     private String password;
-
-    public PostgresSSHTest() throws IOException {
+    //private List<String> accounts;
+    //private List<String> movies;
+    //private List<String> people;
+    public PopulateDatabase()
+            throws IOException {
         File file = new File("/TxtsAccessible/loginpostgresp320_18.txt");
         Scanner scan = new Scanner(file);
         user = scan.nextLine();
         password = scan.nextLine();
         scan.close();
+       // this.accounts = accounts;
+       // this.movies = movies;
+       // this.people = people;
     }
-    public static void main(String[] args) {
 
-        try {
-            PostgresSSHTest postgresSSHTest = new PostgresSSHTest();
-            postgresSSHTest.dbConnect();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-    }
-    public void dbConnect() throws SQLException {
+    public void connecttoDb() throws SQLException {
 
         int lport = 5432;
         String rhost = "starbug.cs.rit.edu";
@@ -65,13 +67,9 @@ public class PostgresSSHTest {
             conn = DriverManager.getConnection(url, props);
             System.out.println("Database connection established");
 
-            // Do something with the database....
+            Statement movie = conn.createStatement();
 
-
-
-            ConsoleApp applicationHandler = new ConsoleApp(conn);
-            //applicationHandler.mainLoop();
-
+            Statement person = conn.createStatement();
 
 
         } catch (Exception e) {
@@ -87,5 +85,12 @@ public class PostgresSSHTest {
             }
         }
     }
-
+    public String movieInsertString(){
+        String movieInsert = "Insert into movie VALUES(";
+        return movieInsert;
+    }
+    public String personInsertString(){
+        String personInsert = "Insert into person VALUES(";
+        return personInsert;
+    }
 }
