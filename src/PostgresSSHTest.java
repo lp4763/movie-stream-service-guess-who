@@ -1,4 +1,3 @@
-import Application.ConsoleApp;
 import com.jcraft.jsch.*;
 
 import java.io.File;
@@ -70,7 +69,7 @@ public class PostgresSSHTest {
 
 
             ConsoleApp applicationHandler = new ConsoleApp(conn);
-            //applicationHandler.mainLoop();
+            applicationHandler.mainLoop();
 
 
 
