@@ -9,7 +9,7 @@ public class Account {
            lastLoginTime,
            createDate;
 
-    Account(String fName, String lName, String email, String password, String userName, String lastLoginTime, String createDate){
+    public Account(String fName, String lName, String email, String password, String userName, String lastLoginTime, String createDate){
         this.fName = fName;
         this.lName = lName;
         this.email = email;
