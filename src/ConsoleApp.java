@@ -8,7 +8,7 @@ import java.util.function.Function;
 
 public class ConsoleApp {
     private Connection conn;
-    private enum Context { exit, login, createUser, loggedIn, collection, createCollection}
+    private enum Context { exit, login, createUser, loggedIn, collection, createCollection, listCollections}
 
     // TODO update this to use the account object, rather than hard coding the username.
     private String username;
@@ -68,6 +68,8 @@ public class ConsoleApp {
                         case createCollection:
                             current = tryCreateCollection(conn, command);
                             break;
+                        case listCollections:
+                            current = tryListCollections(conn);
                     }
                 }
 
@@ -79,6 +81,17 @@ public class ConsoleApp {
         {
             throw e;
         }
+    }
+
+    private Context tryListCollections(Connection conn) throws SQLException {
+        // TODO Fix this to instead use movieCollection objects, rather than hard coded SQL
+        Statement listStatement = conn.createStatement();
+        ResultSet rs = listStatement.executeQuery("SELECT * FROM collection WHERE username=\'" + username + "\';");
+        while (rs.next())
+        {
+            System.out.println("Collection " + rs.getString("name") + " contains " + rs.getInt("movieNumber") + " movies, with a total length of " + rs.getInt("totalLength") + " minutes");
+        }
+        return Context.collection;
     }
 
     private Context tryCreateCollection(Connection conn, String command) throws SQLException {
@@ -140,6 +153,10 @@ public class ConsoleApp {
             if (input[0].toLowerCase().equals("create"))
             {
                 return Context.createCollection;
+            } else if (input[0].toLowerCase().equals("list"))
+            {
+                tryListCollections(conn);
+                return Context.collection;
             }
         } else if (input.length > 1)
         {
