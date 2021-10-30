@@ -8,7 +8,8 @@ import java.util.function.Function;
 
 public class ConsoleApp {
     private Connection conn;
-    private enum Context { exit, login, createUser, loggedIn, collection, createCollection, listCollections}
+    private enum Context { exit, login, createUser, loggedIn,
+        collection, createCollection, listCollections, deleteCollection, renameCollection, editCollection, openCollection}
 
     // TODO update this to use the account object, rather than hard coding the username.
     private String username;
@@ -39,7 +40,19 @@ public class ConsoleApp {
                         System.out.println("Please input a collection specific command such as create, list, edit, delete, rename, open, or play.");
                         break;
                     case createCollection:
-                        System.out.println("Please input the name of the collection you wish to create.");
+                        System.out.println("Please input the name of the collection you want to create.");
+                        break;
+                    case editCollection:
+                        System.out.println("Please input the name of the collection you want to edit.");
+                        break;
+                    case deleteCollection:
+                        System.out.println("Please input the name of the collection you want to delete.");
+                        break;
+                    case renameCollection:
+                        System.out.println("Please input the name of the collection you want to rename, followed by the new name.");
+                        break;
+                    case openCollection:
+                        System.out.println("Please input the name of the collection you want to open and see the movies in.");
                         break;
                 }
                 String command = in.nextLine();
@@ -53,11 +66,9 @@ public class ConsoleApp {
                     switch (current) {
                         case login:
                             current = tryLogin(conn, command);
-                            System.out.println(username);
                             break;
                         case createUser:
                             current = tryCreateUser(conn, command);
-                            System.out.println(username);
                             break;
                         case loggedIn:
                             current = tryCommand(conn, command);
@@ -70,6 +81,19 @@ public class ConsoleApp {
                             break;
                         case listCollections:
                             current = tryListCollections(conn);
+                            break;
+                        case editCollection:
+                            current = tryEditCollection(conn, command);
+                            break;
+                        case deleteCollection:
+                            current = tryDeleteCollection(conn, command);
+                            break;
+                        case renameCollection:
+                            current = tryRenameCollection(conn, command);
+                            break;
+                        case openCollection:
+                            current = tryOpenCollection(conn, command);
+                            break;
                     }
                 }
 
@@ -83,7 +107,232 @@ public class ConsoleApp {
         }
     }
 
+    private Context tryOpenCollection(Connection conn, String command) throws SQLException {
+        // TODO Make sure this is sorting in accordance with requirements
+        // TODO test this once we have actual movies
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        {
+            return Context.collection;
+        }
+        if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
+        {
+            System.out.println("Please input your collection name as:\n<collectionName>");
+            return Context.openCollection;
+        }
+        String[] input = command.split(" ");
+        if (input.length == 1)
+        {
+            if (input[0].length() < 1 || input[0].length() > 63)
+            {
+                System.out.println("Your input does not match format requirements. Please make sure your collection name is between 1 and 63 characters in length.");
+                return Context.openCollection;
+            } else
+            {
+                // TODO update this to use the moviecollection object
+                Statement foundStatement = conn.createStatement();
+                ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                if (rs.next())
+                {
+
+                    // TODO Fix this to instead use movieCollection objects, rather than hard coded SQL
+                    Statement listStatement = conn.createStatement();
+                    rs = listStatement.executeQuery("SELECT * FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\';");
+                    System.out.println("Collection " + input[0] + " contains:");
+                    while (rs.next())
+                    {
+                        System.out.println(rs.getString("moviename"));
+                    }
+                    return Context.collection;
+                } else
+                {
+                    System.out.println("Unable to find a collection to delete with the given name.");
+                    return Context.openCollection;
+                }
+            }
+        } else
+        {
+            System.out.println("Please input your collection name as:\n<collectionName>");
+            return Context.openCollection;
+        }
+    }
+
+    private Context tryEditCollection(Connection conn, String command) throws SQLException {
+        // TODO test this once we have actual movies to add/remove
+
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        {
+            return Context.collection;
+        }
+        if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
+        {
+            System.out.println("Please input your collection name, add or remove, and the movie name as:\n<collectionName> [add/remove] <movie name>");
+            return Context.renameCollection;
+        }
+        String[] input = command.split(" ");
+        if (input.length == 3)
+        {
+            if (input[0].length() < 1 || input[0].length() > 63)
+            {
+                System.out.println("Your input does not match format requirements. Please make sure your collection name is between 1 and 63 characters in length.");
+                return Context.editCollection;
+            } else if (!(input[1].toLowerCase().equals("add") || input[1].toLowerCase().equals("remove")))
+            {
+                System.out.println("Your input does not match format requirements. Please make sure you input whether you want to add or remove the movie.");
+                return Context.editCollection;
+            } else if (input[2].length() < 1 || input[1].length() > 63)
+            {
+                System.out.println("Your input does not match format requirements. Please make sure your movie name is between 1 and 63 characters in length.");
+                return Context.editCollection;
+            } else
+            {
+                // TODO update this to use the moviecollection object
+                Statement foundCStatement = conn.createStatement();
+                ResultSet rs = foundCStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                if (rs.next())
+                {
+                    // TODO update this to use the movie object
+                    Statement foundMStatement = conn.createStatement();
+                    rs = foundMStatement.executeQuery("SELECT name FROM movie WHERE name=\'" + input[2] + "\';");
+                    if (rs.next()) {
+                        Statement foundRStatement = conn.createStatement();
+                        rs = foundRStatement.executeQuery("SELECT name FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\' AND moviename=\'" + input[2] + "\';");
+                        if (input[1].toLowerCase().equals("add"))
+                        {
+                            if (rs.next())
+                            {
+                                System.out.println("The collection already contains that movie");
+                                return Context.editCollection;
+                            } else
+                            {
+                                // TODO update this to use objects, rather than a hard coded insert
+                                Statement addContainsStatement = conn.createStatement();
+                                String values = formatForInsert(new String[] {input[0], username, input[2]});
+                                addContainsStatement.execute("INSERT INTO contains VALUES " + values);
+                                return Context.collection;
+                            }
+
+                        } else
+                        {
+                            if (rs.next())
+                            {
+                                // TODO update this to use objects, rather than a hard coded delete
+                                Statement deleteContainsStatement = conn.createStatement();
+                                deleteContainsStatement.execute("DELETE FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\' AND moviename=\'" + input[2] + "\';");
+                                return Context.collection;
+                            } else
+                            {
+                                System.out.println("The collection does not contain that movie");
+                                return Context.editCollection;
+                            }
+                        }
+                    } else
+                    {
+                        System.out.println("Unable to find a movie with the given name.");
+                        return Context.editCollection;
+                    }
+                } else
+                {
+                    System.out.println("Unable to find a collection with the given name.");
+                    return Context.editCollection;
+                }
+            }
+        } else
+        {
+            System.out.println("Please input your collection name, add or remove, and the movie name as:\n<collectionName> [add/remove] <movie name>");
+            return Context.editCollection;
+        }
+
+    }
+
+    private Context tryRenameCollection(Connection conn, String command) throws SQLException {
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        {
+            return Context.collection;
+        }
+        if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
+        {
+            System.out.println("Please input your collection name and new name as:\n<collectionName> <new name>");
+            return Context.renameCollection;
+        }
+        String[] input = command.split(" ");
+        if (input.length == 2)
+        {
+            if (input[0].length() < 1 || input[0].length() > 63)
+            {
+                System.out.println("Your input does not match format requirements. Please make sure your collection name is between 1 and 63 characters in length.");
+                return Context.deleteCollection;
+            } else if (input[1].length() < 1 || input[1].length() > 63)
+            {
+                System.out.println("Your input does not match format requirements. Please make sure your new collection name is between 1 and 63 characters in length.");
+                return Context.deleteCollection;
+            } else
+            {
+                // TODO update this to use the moviecollection object
+                Statement foundStatement = conn.createStatement();
+                ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                if (rs.next())
+                {
+                    // TODO update this to use the moviecollection object, rather than a hard coded insert
+                    Statement deleteCollectionStatement = conn.createStatement();
+                    deleteCollectionStatement.execute("UPDATE collection SET name=\'"+ input[1] + "\' WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                    return Context.collection;
+                } else
+                {
+                    System.out.println("Unable to find a collection to rename with the given name.");
+                    return Context.renameCollection;
+                }
+            }
+        } else
+        {
+            System.out.println("Please input your collection name and new name as:\n<collectionName> <new name>");
+            return Context.renameCollection;
+        }
+    }
+
+    private Context tryDeleteCollection(Connection conn, String command) throws SQLException {
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        {
+            return Context.collection;
+        }
+        if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
+        {
+            System.out.println("Please input your collection name as:\n<collectionName>");
+            return Context.deleteCollection;
+        }
+        String[] input = command.split(" ");
+        if (input.length == 1)
+        {
+            if (input[0].length() < 1 || input[0].length() > 63)
+            {
+                System.out.println("Your input does not match format requirements. Please make sure your collection name is between 1 and 63 characters in length.");
+                return Context.deleteCollection;
+            } else
+            {
+                // TODO update this to use the moviecollection object
+                Statement foundStatement = conn.createStatement();
+                ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                if (rs.next())
+                {
+                    // TODO update this to use the moviecollection object, rather than a hard coded insert
+                    Statement deleteCollectionStatement = conn.createStatement();
+                    deleteCollectionStatement.execute("DELETE FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                    return Context.collection;
+                } else
+                {
+                    System.out.println("Unable to find a collection to delete with the given name.");
+                    return Context.deleteCollection;
+                }
+            }
+        } else
+        {
+            System.out.println("Please input your collection name as:\n<collectionName>");
+            return Context.deleteCollection;
+        }
+    }
+
     private Context tryListCollections(Connection conn) throws SQLException {
+        // TODO Make sure this is sorting in accordance with requirements
+
         // TODO Fix this to instead use movieCollection objects, rather than hard coded SQL
         Statement listStatement = conn.createStatement();
         ResultSet rs = listStatement.executeQuery("SELECT * FROM collection WHERE username=\'" + username + "\';");
@@ -125,7 +374,6 @@ public class ConsoleApp {
                 // TODO update this to use the moviecollection object, rather than a hard coded insert
                 Statement createCollectionStatement = conn.createStatement();
                 String values = formatForInsert(new String[] {input[0], username, "0", "0"});
-                System.out.println(values);
                 createCollectionStatement.execute("INSERT INTO collection VALUES " + values);
 
                 return Context.collection;
@@ -138,6 +386,7 @@ public class ConsoleApp {
     }
 
     private Context tryCollection(Connection conn, String command) throws SQLException {
+        // TODO add play code, once the framework for playing a specific movie exists
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
         {
             return Context.loggedIn;
@@ -157,6 +406,18 @@ public class ConsoleApp {
             {
                 tryListCollections(conn);
                 return Context.collection;
+            } else if (input[0].toLowerCase().equals("edit"))
+            {
+                return Context.collection;
+            } else if (input[0].toLowerCase().equals("delete"))
+            {
+                return Context.deleteCollection;
+            } else if (input[0].toLowerCase().equals("rename"))
+            {
+                return Context.renameCollection;
+            } else if (input[0].toLowerCase().equals("open"))
+            {
+                return Context.openCollection;
             }
         } else if (input.length > 1)
         {
@@ -173,11 +434,21 @@ public class ConsoleApp {
             if (input[0].toLowerCase().equals("create"))
             {
                 return tryCreateCollection(conn, recreate);
+            } else if (input[0].toLowerCase().equals("edit"))
+            {
+                return tryEditCollection(conn, recreate);
+            } else if (input[0].toLowerCase().equals("delete"))
+            {
+                return tryDeleteCollection(conn, recreate);
+            } else if (input[0].toLowerCase().equals("rename"))
+            {
+                return tryRenameCollection(conn, recreate);
+            } else if (input[0].toLowerCase().equals("open"))
+            {
+                return tryOpenCollection(conn, recreate);
             }
-            System.out.println("Please input a collection specific command such as create, list, edit, delete, rename, open, or play.");
             return Context.collection;
         }
-        System.out.println("Please input a collection specific command such as create, list, edit, delete, rename, open, or play.");
         return Context.collection;
     }
 
