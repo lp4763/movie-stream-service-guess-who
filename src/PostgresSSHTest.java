@@ -74,7 +74,13 @@ public class PostgresSSHTest {
 
 
         } catch (Exception e) {
-            e.printStackTrace();
+            if (e.toString().equals("org.postgresql.util.PSQLException: FATAL: remaining connection slots are reserved for non-replication superuser connections"))
+            {
+                System.out.println("Unfortunately, the server is full. Please try again later.");
+            } else
+            {
+                e.printStackTrace();
+            }
         } finally {
             if (conn != null && !conn.isClosed()) {
                 System.out.println("Closing Database Connection");
