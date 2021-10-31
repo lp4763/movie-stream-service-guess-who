@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="JavaPostgresSSHJars">
+    <CLASSES>
+      <root url="file://C:/Externaljars/JavaPostgresSSHJars" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+    <jarDirectory url="file://C:/Externaljars/JavaPostgresSSHJars" recursive="false" />
+  </library>
+</component>
