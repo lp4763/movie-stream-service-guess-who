@@ -1,15 +1,15 @@
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import javax.xml.transform.Result;
+import java.sql.*;
 import java.time.Instant;
 import java.util.Scanner;
+import java.util.concurrent.RecursiveTask;
 import java.util.function.Function;
 
 public class ConsoleApp {
     private Connection conn;
     private enum Context { exit, login, createUser, loggedIn,
-        collection, createCollection, listCollections, deleteCollection, renameCollection, editCollection, openCollection}
+        collection, createCollection, listCollections, deleteCollection, renameCollection, editCollection, openCollection,
+        search}
 
     // TODO update this to use the account object, rather than hard coding the username.
     private String username;
@@ -54,6 +54,8 @@ public class ConsoleApp {
                     case openCollection:
                         System.out.println("Please input the name of the collection you want to open and see the movies in.");
                         break;
+                    case search:
+                        System.out.println("Please input the terms of your search, or nothing to see all movies.");
                 }
                 String command = in.nextLine();
                 if (command.toLowerCase().equals("quit") || command.toLowerCase().equals("exit")) {
@@ -94,6 +96,8 @@ public class ConsoleApp {
                         case openCollection:
                             current = tryOpenCollection(conn, command);
                             break;
+                        case search:
+                            current = trySearch(conn, command);
                     }
                 }
 
@@ -105,6 +109,266 @@ public class ConsoleApp {
         {
             throw e;
         }
+    }
+
+    private Context trySearch(Connection conn, String command) throws SQLException {
+        // TODO Make sure this is sorting in accordance with requirements
+        // TODO test this once we have actual movies
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        {
+            return Context.loggedIn;
+        }
+        if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
+        {
+            System.out.println("Please input your collection name as:\n<collectionName>");
+            return Context.search;
+        }
+        String[] input = command.split(" ");
+        String whereClause = " WHERE ";
+        boolean wherePresent = false;
+        for (int i = 0; i < input.length; i++)
+        {
+            if (input[i].equals("") || input[i].equals(" ") || input[i].equals("\n"))
+            {
+                continue;
+            } else if (input[i].toLowerCase().equals("name"))
+            {
+                if (wherePresent)
+                {
+                    whereClause += " AND ";
+                } else
+                {
+                    wherePresent = true;
+                }
+                i++;
+                String inputS = input[i];
+                String desiredName = "";
+                for (int j = 0; j < inputS.length(); j++)
+                {
+                    if (inputS.charAt(j) == '_')
+                    {
+                        desiredName += ' ';
+                    } else {
+                        desiredName += inputS.charAt(j);
+                    }
+                }
+                whereClause += "name LIKE \'%" + desiredName + "%\'";
+            } else if (input[i].toLowerCase().equals("genre"))
+            {
+                if (wherePresent)
+                {
+                    whereClause += " AND ";
+                } else
+                {
+                    wherePresent = true;
+                }
+                i++;
+                String desiredGenre = input[i];
+                whereClause += "genre LIKE \'%" + desiredGenre + "%\'";
+            } else if (input[i].toLowerCase().equals("release"))
+            {
+                if (wherePresent)
+                {
+                    whereClause += " AND ";
+                } else
+                {
+                    wherePresent = true;
+                }
+                i++;
+                String desiredDate = input[i];
+                try {
+                    java.sql.Date date = Date.valueOf(desiredDate);
+                    whereClause += "releasedate=" + date;
+                } catch (IllegalArgumentException e)
+                {
+                    System.out.println(desiredDate + " is not a valid date. Please format release date terms as:\nrelease <yyyy>-<mm>-<dd>");
+                    return Context.search;
+                }
+            } else if (input[i].toLowerCase().equals("studio"))
+            {
+                if (wherePresent)
+                {
+                    whereClause += " AND ";
+                } else
+                {
+                    wherePresent = true;
+                }
+                i++;
+                String desiredStudio = "";
+                String inputS = input[i];
+                for (int j = 0; j < inputS.length(); j++)
+                {
+                    if (inputS.charAt(j) == '_')
+                    {
+                        desiredStudio += ' ';
+                    } else {
+                        desiredStudio += inputS.charAt(j);
+                    }
+                }
+                whereClause += "studio LIKE \'%" + desiredStudio + "%\'";
+            } else if (input[i].toLowerCase().equals("director"))
+            {
+                if (wherePresent)
+                {
+                    whereClause += " AND ";
+                } else
+                {
+                    wherePresent = true;
+                }
+                i++;
+                String desiredDirector = "";
+                String inputS = input[i];
+                for (int j = 0; j < inputS.length(); j++)
+                {
+                    if (inputS.charAt(j) == '_')
+                    {
+                        desiredDirector += ' ';
+                    } else {
+                        desiredDirector += inputS.charAt(j);
+                    }
+                }
+                Statement directorStatement = conn.createStatement();
+                ResultSet ds = directorStatement.executeQuery("SELECT * FROM person WHERE name=\'" + desiredDirector + "\';");
+                if (ds.next())
+                {
+                    int directorID = ds.getInt("personid");
+                    whereClause += "directorid=" + directorID;
+                } else
+                {
+                    System.out.println("Unable to find director " + desiredDirector + ".");
+                    return Context.search;
+                }
+            } else if (input[i].toLowerCase().equals("actor"))
+            {
+                if (wherePresent)
+                {
+                    whereClause += " AND ";
+                } else
+                {
+                    wherePresent = true;
+                }
+                i++;
+                String desiredActor = "";
+                String inputS = input[i];
+                for (int j = 0; j < inputS.length(); j++)
+                {
+                    if (inputS.charAt(j) == '_')
+                    {
+                        desiredActor += ' ';
+                    } else {
+                        desiredActor += inputS.charAt(j);
+                    }
+                }
+                Statement actorStatement = conn.createStatement();
+                ResultSet as = actorStatement.executeQuery("SELECT * FROM person WHERE name=\'" + desiredActor + "\';");
+                if (as.next())
+                {
+                    int personID = as.getInt("personid");
+                    whereClause += "name IN (SELECT name FROM actsin WHERE personid=" + personID + ")";
+                }
+                else {
+                    System.out.println("Unable to find actor " + desiredActor + ".");
+                    return Context.search;
+                }
+            } else
+            {
+                System.out.println("Unknown search term " + input[i] + ".");
+                return Context.search;
+            }
+            // TODO add different sort modifiers.
+        }
+
+        Statement listStatement = conn.createStatement();
+        String select = "SELECT * FROM movie";
+        if (wherePresent)
+        {
+            select += whereClause;
+        }
+        System.out.println(select);
+        ResultSet rs = listStatement.executeQuery(select);
+        System.out.println("The movies matching your search are:");
+        while (rs.next())
+        {
+            String nameIn = rs.getString("name");
+            String name = "";
+            for (int i = 0; i < nameIn.length(); i++)
+            {
+                name += nameIn.charAt(i);
+                if (nameIn.charAt(i) == '\'')
+                {
+                    name += nameIn.charAt(i);
+                }
+            }
+            System.out.print(name);
+
+            System.out.print(" is directed by ");
+            int directorID = rs.getInt("directorid");
+            Statement directorStatement = conn.createStatement();
+            ResultSet ds = directorStatement.executeQuery("SELECT * FROM person WHERE personid=" + directorID);
+            ds.next();
+            System.out.print(ds.getString("name"));
+
+            System.out.print(", is acted by ");
+            Statement actIdsStatement = conn.createStatement();
+            ResultSet ais = actIdsStatement.executeQuery("SELECT * FROM actsin WHERE moviename=\'" + name + "\';");
+            boolean isActed = false;
+            while (ais.next())
+            {
+                isActed = true;
+                Statement actorStatment = conn.createStatement();
+                ResultSet as = actorStatment.executeQuery("SELECT * FROM person WHERE personid=" + ais.getInt("personid"));
+                System.out.print(as.getString("name") + ", ");
+            }
+            if (!isActed)
+            {
+                System.out.print("no known actors,");
+            }
+
+            System.out.print(" is " + rs.getInt("length") + " minutes long,");
+
+            System.out.print(" is rated " + rs.getString("mpaarating") + ", and");
+
+            System.out.print(" has an average user score of " + rs.getFloat("userratingavgscore") + " stars.");
+
+            System.out.println();
+        }
+        return Context.search;
+
+        /*if (input.length == 1)
+        {
+            if (input[0].length() < 1 || input[0].length() > 63)
+            {
+                System.out.println("Your input does not match format requirements. Please make sure your collection name is between 1 and 63 characters in length.");
+                return Context.openCollection;
+            } else
+            {
+                // TODO update this to use the moviecollection object
+                Statement foundStatement = conn.createStatement();
+                ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                if (rs.next())
+                {
+
+                    // TODO Fix this to instead use movieCollection objects, rather than hard coded SQL
+                    Statement listStatement = conn.createStatement();
+                    rs = listStatement.executeQuery("SELECT * FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\';");
+                    System.out.println("Collection " + input[0] + " contains:");
+                    while (rs.next())
+                    {
+                        System.out.println(rs.getString("moviename"));
+                    }
+                    return Context.collection;
+                } else
+                {
+                    System.out.println("Unable to find a collection to delete with the given name.");
+                    return Context.openCollection;
+                }
+            }
+        } else
+        {
+            System.out.println("Please input your collection name as:\n<collectionName>");
+            return Context.openCollection;
+        }*/
+
     }
 
     private Context tryOpenCollection(Connection conn, String command) throws SQLException {
@@ -204,6 +468,8 @@ public class ConsoleApp {
                                 return Context.editCollection;
                             } else
                             {
+                                // TODO update the collection's movie count and length
+
                                 // TODO update this to use objects, rather than a hard coded insert
                                 Statement addContainsStatement = conn.createStatement();
                                 String values = formatForInsert(new String[] {input[0], username, input[2]});
@@ -215,6 +481,8 @@ public class ConsoleApp {
                         {
                             if (rs.next())
                             {
+                                // TODO update the collection's movie count and length
+
                                 // TODO update this to use objects, rather than a hard coded delete
                                 Statement deleteContainsStatement = conn.createStatement();
                                 deleteContainsStatement.execute("DELETE FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\' AND moviename=\'" + input[2] + "\';");
@@ -469,6 +737,9 @@ public class ConsoleApp {
             if (input[0].toLowerCase().equals("collection"))
             {
                 return Context.collection;
+            } else if (input[0].toLowerCase().equals("search"))
+            {
+                return Context.search;
             }
 
         } else if (input.length > 1)
@@ -485,6 +756,9 @@ public class ConsoleApp {
             if (input[0].toLowerCase().equals("collection"))
             {
                 return tryCollection(conn, recreate);
+            } else if (input[0].toLowerCase().equals("search"))
+            {
+                return trySearch(conn, recreate);
             }
         }
 
