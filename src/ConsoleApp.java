@@ -1,6 +1,7 @@
 import javax.xml.transform.Result;
 import java.sql.*;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.RecursiveTask;
 import java.util.function.Function;
@@ -9,7 +10,7 @@ public class ConsoleApp {
 
     private enum Context { exit, login, createUser, loggedIn,
         collection, createCollection, listCollections, deleteCollection, renameCollection, editCollection, openCollection,
-        search, follow}
+        search, follow, play}
 
     private String username;
     private Connection conn;
@@ -33,7 +34,7 @@ public class ConsoleApp {
                         System.out.println("Please create a new user by entering your username, password, firstname, lastname, and email.");
                         break;
                     case loggedIn:
-                        System.out.println("You are logged in. Please enter a command, such as search, collection, or follow. Enter help for more options.");
+                        System.out.println("You are logged in. Please enter a command, such as search, collection, follow, or play. Enter help for more information.");
                         break;
                     case collection:
                         System.out.println("Please input a collection specific command such as create, list, edit, delete, rename, open, or play.");
@@ -58,6 +59,9 @@ public class ConsoleApp {
                         break;
                     case follow:
                         System.out.println("Please input the name of the user you want to follow/unfollow.");
+                        break;
+                    case play:
+                        System.out.println("Please input the name of the movie or collection you wish to play, optionally followed by the rating you wish to give it.");
                         break;
 
                 }
@@ -105,6 +109,9 @@ public class ConsoleApp {
                             break;
                         case follow:
                             current = tryFollow(command);
+                            break;
+                        case play:
+                            current = tryPlay(command);
                             break;
                     }
                 }
@@ -645,14 +652,13 @@ public class ConsoleApp {
     }
 
     private Context tryCollection(String command) throws SQLException {
-        // TODO add play code, once the framework for playing a specific movie exists
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
         {
             return Context.loggedIn;
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("Please input a collection specific command such as create, list, edit, delete, rename, open, or play.");
+            System.out.println("Please input a collection specific command such as create, list, edit, delete, rename, or open.");
             return Context.collection;
         }
         String[] input = command.split(" ");
@@ -738,6 +744,9 @@ public class ConsoleApp {
             else if(input[0].toLowerCase().equals("follow")){
                 return Context.follow;
             }
+            else if(input[0].toLowerCase().equals("play")){
+                return Context.play;
+            }
 
         } else if (input.length > 1)
         {
@@ -760,6 +769,9 @@ public class ConsoleApp {
             else if(input[0].toLowerCase().equals("follow")){
                 return tryFollow(recreate);
             }
+            else if(input[0].toLowerCase().equals("play")){
+                return tryPlay(recreate);
+            }
 
         }
 
@@ -767,6 +779,110 @@ public class ConsoleApp {
                 "Please input your command as:\n<command>," +
                 " from 'collection', 'search', 'follow', 'play'");
         return Context.loggedIn;
+    }
+
+    private Context tryPlay(String command) throws SQLException {
+        String[] input = command.split(" ");
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop") || command.toLowerCase().equals("back"))
+        {
+            return Context.loggedIn;
+        }
+        if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
+        {
+            System.out.println("Please input the name of the movie or collection you wish to play, optionally followed by the rating you wish to give it. Please replace any spaces in names with underscores. Format as:\n<movie_name>/<collectionName> (rating 1-5)");
+            return Context.play;
+        }
+        if(input.length < 1 || input.length > 2)
+        {
+            System.out.println("Your input does not match format requirements. " +
+                    "Please input the name of the movie or collection you wish to play, optionally followed by the rating you wish to give it. Please replace any spaces in names with underscores. Format as:\n<movie_name>/<collectionName> (rating 1-5)");
+            return Context.play;
+        }
+        int rating = 0;
+        String name = underToSpace(input[0]);
+        if (input.length > 1) {
+            try {
+                rating = Integer.valueOf(input[1]);
+            } catch (NumberFormatException e) {
+                System.out.println("Unable to parse " + input[1] + " into an integer.");
+                return Context.play;
+            }
+            if (rating != 0 && (rating < 1 || rating > 5)) {
+                System.out.println("Ratings must be between 1 and 5, or 0 for no rating.");
+                return Context.play;
+            }
+        }
+
+        Statement findStatement = conn.createStatement();
+
+        ResultSet mS = findStatement.executeQuery("SELECT * FROM movie WHERE name=\'" + name + "\';");
+        ArrayList<String> movieNames = new ArrayList<>();
+
+        if (mS.next())
+        {
+            movieNames.add(mS.getString("name"));
+        } else
+        {
+            ResultSet cs = findStatement.executeQuery("SELECT * FROM collection WHERE name=\'" + name + "\' AND username=\'" + username + "\';");
+            if (cs.next())
+            {
+                Statement listStatement = conn.createStatement();
+                ResultSet rs = listStatement.executeQuery("SELECT * FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\';");
+                System.out.println("Playing from collection " + input[0] + ".");
+                while (rs.next())
+                {
+                    movieNames.add(rs.getString("moviename"));
+                }
+            } else
+            {
+                System.out.println("Unable to find movie or collection " + name + ".");
+                return Context.play;
+            }
+        }
+
+
+        for (String movie: movieNames)
+        {
+            System.out.println("Playing " + movie);
+
+            Statement watchesStatement = conn.createStatement();
+            ResultSet ws = watchesStatement.executeQuery("SELECT * FROM watches WHERE username=\'" + username + "\' AND moviename=\'" + movie + "\';");
+
+            if (ws.next())
+            {
+                Statement updateStatement = conn.createStatement();
+                updateStatement.execute("UPDATE watches SET \"watchCount\"=\"watchCount\"+1 WHERE username=\'" + username + "\' AND moviename=\'" + movie + "\';");
+
+                if (rating != 0 && ws.getInt("rating") != 0)
+                {
+                    Statement oldRatings = conn.createStatement();
+                    ResultSet oldSet = oldRatings.executeQuery("SELECT * from movie WHERE name=\'" + movie + "\';");
+                    oldSet.next();
+                    Statement removeOld = conn.createStatement();
+                    if (oldSet.getInt("userratingcount") == 1)
+                    {
+                        removeOld.execute("UPDATE movie SET userratingcount=0, userratingavgscore=0.0 WHERE name=\'" + movie + "\';");
+                    } else
+                    {
+                        removeOld.execute("UPDATE movie SET userratingcount=userratingcount-1, userratingavgscore=((userratingavgscore*userratingcount)-" + oldSet.getInt("userratingcount") + ")/(userratingcount-1) WHERE name=\'" + movie + "\';");
+                    }
+                }
+            } else
+            {
+                Statement updateStatement = conn.createStatement();
+                String values = formatForInsert(new String[] {username, movie, "0", "1"});
+                updateStatement.execute("INSERT INTO watches VALUES" + values);
+            }
+
+            if (rating != 0)
+            {
+                Statement newRating = conn.createStatement();
+                newRating.execute("UPDATE movie SET userratingcount=userratingcount+1, userratingavgscore=((userratingavgscore*userratingcount)+" + rating + ")/(userratingcount+1) WHERE name=\'" + movie + "\';");
+                newRating.execute("UPDATE watches SET rating=" + rating + "WHERE username=\'" + username + "\' AND moviename=\'" + movie + "\';");
+            }
+        }
+
+        return Context.play;
     }
 
     private Context tryCreateUser(String command) throws SQLException {
@@ -893,6 +1009,15 @@ public class ConsoleApp {
     private Context tryFollow(String command) throws SQLException
     {
         String[] input = command.split(" ");
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop") || command.toLowerCase().equals("back"))
+        {
+            return Context.loggedIn;
+        }
+        if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
+        {
+            System.out.println("Please input the username or email of the user you want to follow or unfollow as\n<username>");
+            return Context.follow;
+        }
         if(input.length != 1)
         {
             System.out.println("Your input does not match format requirements. " +
