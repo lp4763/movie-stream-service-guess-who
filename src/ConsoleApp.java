@@ -926,18 +926,30 @@ public class ConsoleApp {
             return Context.follow;
         }
         Statement followStmt = conn.createStatement();
-        ResultSet rs = followStmt.executeQuery("SELECT followinguser FROM follows WHERE followeduser =\'"
-                +input[0]+ "\' AND followinguser = \'" +username +"\'");
-        if(rs.next()){
-            followStmt.execute("DELETE FROM follows WHERE followeduser =\'" +input[0]+
+
+        String userToFollow = "";
+
+        ResultSet rs21 = followStmt.executeQuery("SELECT username FROM account WHERE email = \'"+input[0]+"\'");
+
+        if(rs21.next()){
+             userToFollow = rs21.getString(1);
+        }
+        else
+        {
+            userToFollow = input[0];
+        }
+        ResultSet rs1 = followStmt.executeQuery("SELECT followinguser FROM follows WHERE followeduser =\'"
+                +userToFollow+ "\' AND followinguser = \'" +username +"\'");
+        if(rs1.next()){
+            followStmt.execute("DELETE FROM follows WHERE followeduser =\'" +userToFollow+
                     "\' AND followinguser = \'" +username +"\'");
 
-            System.out.println("You have unfollowed "+input[0]);
+            System.out.println("You have unfollowed "+userToFollow);
             return Context.loggedIn;
         }
         else{
-            followStmt.execute("INSERT INTO follows VALUES(\'"+ input[0] +"\',\'"+username +"\')");
-            System.out.println("You are now following "+input[0]);
+            followStmt.execute("INSERT INTO follows VALUES(\'"+ userToFollow +"\',\'"+username +"\')");
+            System.out.println("You are now following "+ userToFollow);
             return Context.loggedIn;
         }
     }
