@@ -917,19 +917,25 @@ public class ConsoleApp {
         {
             userToFollow = input[0];
         }
-        ResultSet rs1 = followStmt.executeQuery("SELECT followinguser FROM follows WHERE followeduser =\'"
-                +userToFollow+ "\' AND followinguser = \'" +username +"\'");
-        if(rs1.next()){
-            followStmt.execute("DELETE FROM follows WHERE followeduser =\'" +userToFollow+
-                    "\' AND followinguser = \'" +username +"\'");
+        ResultSet rs0 = followStmt.executeQuery("SELECT username from account WHERE username=\'" + userToFollow + "\'");
+        if (rs0.next()) {
+            ResultSet rs1 = followStmt.executeQuery("SELECT followinguser FROM follows WHERE followeduser =\'"
+                    + userToFollow + "\' AND followinguser = \'" + username + "\'");
+            if (rs1.next()) {
+                followStmt.execute("DELETE FROM follows WHERE followeduser =\'" + userToFollow +
+                        "\' AND followinguser = \'" + username + "\'");
 
-            System.out.println("You have unfollowed "+userToFollow);
-            return Context.loggedIn;
-        }
-        else{
-            followStmt.execute("INSERT INTO follows VALUES(\'"+ userToFollow +"\',\'"+username +"\')");
-            System.out.println("You are now following "+ userToFollow);
-            return Context.loggedIn;
+                System.out.println("You have unfollowed " + userToFollow);
+                return Context.loggedIn;
+            } else {
+                followStmt.execute("INSERT INTO follows VALUES(\'" + userToFollow + "\',\'" + username + "\')");
+                System.out.println("You are now following " + userToFollow);
+                return Context.loggedIn;
+            }
+        } else
+        {
+            System.out.println("Unable to find user " + userToFollow + ".");
+            return Context.follow;
         }
     }
 
