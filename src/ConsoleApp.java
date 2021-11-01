@@ -6,16 +6,16 @@ import java.util.concurrent.RecursiveTask;
 import java.util.function.Function;
 
 public class ConsoleApp {
-    private Connection conn;
+
     private enum Context { exit, login, createUser, loggedIn,
         collection, createCollection, listCollections, deleteCollection, renameCollection, editCollection, openCollection,
-        search}
+        search, follow}
 
     private String username;
-
-    public ConsoleApp(Connection nConn)
+    private Connection conn;
+    public ConsoleApp(Connection conn)
     {
-        conn = nConn;
+        this.conn = conn;
     }
 
     public void mainLoop() throws SQLException
@@ -55,6 +55,11 @@ public class ConsoleApp {
                         break;
                     case search:
                         System.out.println("Please input the terms of your search, or nothing to see all movies.");
+                        break;
+                    case follow:
+                        System.out.println("Please input the name of the user you want to follow/unfollow.");
+                        break;
+
                 }
                 String command = in.nextLine();
                 if (command.toLowerCase().equals("quit") || command.toLowerCase().equals("exit")) {
@@ -66,37 +71,41 @@ public class ConsoleApp {
                     }
                     switch (current) {
                         case login:
-                            current = tryLogin(conn, command);
+                            current = tryLogin(command);
                             break;
                         case createUser:
-                            current = tryCreateUser(conn, command);
+                            current = tryCreateUser(command);
                             break;
                         case loggedIn:
-                            current = tryCommand(conn, command);
+                            current = tryCommand(command);
                             break;
                         case collection:
-                            current = tryCollection(conn, command);
+                            current = tryCollection(command);
                             break;
                         case createCollection:
-                            current = tryCreateCollection(conn, command);
+                            current = tryCreateCollection(command);
                             break;
                         case listCollections:
-                            current = tryListCollections(conn);
+                            current = tryListCollections();
                             break;
                         case editCollection:
-                            current = tryEditCollection(conn, command);
+                            current = tryEditCollection(command);
                             break;
                         case deleteCollection:
-                            current = tryDeleteCollection(conn, command);
+                            current = tryDeleteCollection(command);
                             break;
                         case renameCollection:
-                            current = tryRenameCollection(conn, command);
+                            current = tryRenameCollection(command);
                             break;
                         case openCollection:
-                            current = tryOpenCollection(conn, command);
+                            current = tryOpenCollection(command);
                             break;
                         case search:
-                            current = trySearch(conn, command);
+                            current = trySearch(command);
+                            break;
+                        case follow:
+                            current = tryFollow(command);
+                            break;
                     }
                 }
 
@@ -110,7 +119,7 @@ public class ConsoleApp {
         }
     }
 
-    private Context trySearch(Connection conn, String command) throws SQLException {
+    private Context trySearch(String command) throws SQLException {
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
         {
             return Context.loggedIn;
@@ -131,14 +140,13 @@ public class ConsoleApp {
         for (int i = 0; i < input.length; i++)
         {
             // TODO test code for searching by actors once actors are populated
-            if (input.length - i <= 1)
-            {
-                System.out.println("Dangling search term " + input[i] + ". Terms must be either [name/genre/release/studio/director/actor] <desired_value> or sort [name/studio/genre/release] [ascending/descending]. Names with spaces in them should have the spaces input as '_'.");
-                return Context.search;
-            }
             if (input[i].equals("") || input[i].equals(" ") || input[i].equals("\n"))
             {
                 continue;
+            } else if (input.length - i <= 1)
+            {
+                System.out.println("Dangling search term " + input[i] + ". Terms must be either [name/genre/release/studio/director/actor] <desired_value> or sort [name/studio/genre/release] [ascending/descending]. Names with spaces in them should have the spaces input as '_'.");
+                return Context.search;
             } else if (input[i].toLowerCase().equals("name"))
             {
                 if (wherePresent)
@@ -331,14 +339,15 @@ public class ConsoleApp {
                 isActed = true;
                 Statement actorStatment = conn.createStatement();
                 ResultSet as = actorStatment.executeQuery("SELECT * FROM person WHERE personid=" + ais.getInt("personid"));
+                as.next();
                 System.out.print(as.getString("name") + ", ");
             }
             if (!isActed)
             {
-                System.out.print("no known actors,");
+                System.out.print("no known actors, ");
             }
 
-            System.out.print(" is " + rs.getInt("length") + " minutes long,");
+            System.out.print("is " + rs.getInt("length") + " minutes long,");
 
             System.out.print(" is rated " + rs.getString("mpaarating") + ", and");
 
@@ -349,7 +358,7 @@ public class ConsoleApp {
         return Context.search;
     }
 
-    private Context tryOpenCollection(Connection conn, String command) throws SQLException {
+    private Context tryOpenCollection(String command) throws SQLException {
         // TODO Make sure this is sorting in accordance with requirements
         // TODO test this once we have actual movies
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
@@ -395,7 +404,7 @@ public class ConsoleApp {
         }
     }
 
-    private Context tryEditCollection(Connection conn, String command) throws SQLException {
+    private Context tryEditCollection(String command) throws SQLException {
         // TODO test this once we have actual movies to add/remove
 
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
@@ -503,7 +512,7 @@ public class ConsoleApp {
         return output;
     }
 
-    private Context tryRenameCollection(Connection conn, String command) throws SQLException {
+    private Context tryRenameCollection(String command) throws SQLException {
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
         {
             return Context.collection;
@@ -546,7 +555,7 @@ public class ConsoleApp {
         }
     }
 
-    private Context tryDeleteCollection(Connection conn, String command) throws SQLException {
+    private Context tryDeleteCollection(String command) throws SQLException {
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
         {
             return Context.collection;
@@ -585,7 +594,7 @@ public class ConsoleApp {
         }
     }
 
-    private Context tryListCollections(Connection conn) throws SQLException {
+    private Context tryListCollections() throws SQLException {
         Statement listStatement = conn.createStatement();
         ResultSet rs = listStatement.executeQuery("SELECT * FROM collection WHERE username=\'" + username + "\' ORDER BY name ASC;");
         while (rs.next())
@@ -595,7 +604,7 @@ public class ConsoleApp {
         return Context.collection;
     }
 
-    private Context tryCreateCollection(Connection conn, String command) throws SQLException {
+    private Context tryCreateCollection(String command) throws SQLException {
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
         {
             return Context.collection;
@@ -635,7 +644,7 @@ public class ConsoleApp {
         }
     }
 
-    private Context tryCollection(Connection conn, String command) throws SQLException {
+    private Context tryCollection(String command) throws SQLException {
         // TODO add play code, once the framework for playing a specific movie exists
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
         {
@@ -654,7 +663,7 @@ public class ConsoleApp {
                 return Context.createCollection;
             } else if (input[0].toLowerCase().equals("list"))
             {
-                tryListCollections(conn);
+                tryListCollections();
                 return Context.collection;
             } else if (input[0].toLowerCase().equals("edit"))
             {
@@ -682,34 +691,38 @@ public class ConsoleApp {
             }
             if (input[0].toLowerCase().equals("create"))
             {
-                return tryCreateCollection(conn, recreate);
+                return tryCreateCollection(recreate);
             } else if (input[0].toLowerCase().equals("edit"))
             {
-                return tryEditCollection(conn, recreate);
+                return tryEditCollection(recreate);
             } else if (input[0].toLowerCase().equals("delete"))
             {
-                return tryDeleteCollection(conn, recreate);
+                return tryDeleteCollection(recreate);
             } else if (input[0].toLowerCase().equals("rename"))
             {
-                return tryRenameCollection(conn, recreate);
+                return tryRenameCollection(recreate);
             } else if (input[0].toLowerCase().equals("open"))
             {
-                return tryOpenCollection(conn, recreate);
+                return tryOpenCollection(recreate);
             }
             return Context.collection;
         }
         return Context.collection;
     }
 
-    private Context tryCommand(Connection conn, String command) throws SQLException {
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop") || command.toLowerCase().equals("back") || command.toLowerCase().equals("logout") || command.toLowerCase().equals("log out"))
+    private Context tryCommand(String command) throws SQLException {
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop") ||
+                command.toLowerCase().equals("back") || command.toLowerCase().equals("logout")
+                || command.toLowerCase().equals("log out"))
         {
             System.out.println("Logging out.");
             return Context.login;
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("You can type collection to access collection commands, search to access search commands, follow to access follow commands, or play to access play commands.");
+            System.out.println("You can type collection to access collection commands, " +
+                    "search to access search commands, follow to access follow commands," +
+                    " or play to access play commands.");
             return Context.loggedIn;
         }
         String[] input = command.split(" ");
@@ -721,6 +734,9 @@ public class ConsoleApp {
             } else if (input[0].toLowerCase().equals("search"))
             {
                 return Context.search;
+            }
+            else if(input[0].toLowerCase().equals("follow")){
+                return Context.follow;
             }
 
         } else if (input.length > 1)
@@ -736,18 +752,24 @@ public class ConsoleApp {
             }
             if (input[0].toLowerCase().equals("collection"))
             {
-                return tryCollection(conn, recreate);
+                return tryCollection(recreate);
             } else if (input[0].toLowerCase().equals("search"))
             {
-                return trySearch(conn, recreate);
+                return trySearch(recreate);
             }
+            else if(input[0].toLowerCase().equals("follow")){
+                return tryFollow(recreate);
+            }
+
         }
 
-        System.out.println("Your input does not match any commands. Please input your command as:\n<command>, from 'collection', 'search', 'follow', 'play'");
+        System.out.println("Your input does not match any commands. " +
+                "Please input your command as:\n<command>," +
+                " from 'collection', 'search', 'follow', 'play'");
         return Context.loggedIn;
     }
 
-    private Context tryCreateUser(Connection conn, String command) throws SQLException {
+    private Context tryCreateUser(String command) throws SQLException {
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop") || command.toLowerCase().equals("back"))
         {
             return Context.login;
@@ -809,7 +831,7 @@ public class ConsoleApp {
         return Context.loggedIn;
     }
 
-    private Context tryLogin(Connection conn, String command) throws SQLException
+    private Context tryLogin(String command) throws SQLException
     {
         if (command.toLowerCase().equals("create") || command.toLowerCase().equals("new"))
         {
@@ -866,6 +888,48 @@ public class ConsoleApp {
                 System.out.println("Account matching username not found. Creating a new account.");
                 return Context.createUser;
             }
+        }
+    }
+    private Context tryFollow(String command) throws SQLException
+    {
+        String[] input = command.split(" ");
+        if(input.length != 1)
+        {
+            System.out.println("Your input does not match format requirements. " +
+                    "Please give the name you want to follow:\n<username>");
+            return Context.follow;
+        }
+        if(input[0].length() > 63){
+            System.out.println("Please make sure the username you are typing in is " +
+                    "between 1 and 63 characters in length.");
+            return Context.follow;
+        }
+        Statement followStmt = conn.createStatement();
+
+        String userToFollow = "";
+
+        ResultSet rs21 = followStmt.executeQuery("SELECT username FROM account WHERE email = \'"+input[0]+"\'");
+
+        if(rs21.next()){
+             userToFollow = rs21.getString(1);
+        }
+        else
+        {
+            userToFollow = input[0];
+        }
+        ResultSet rs1 = followStmt.executeQuery("SELECT followinguser FROM follows WHERE followeduser =\'"
+                +userToFollow+ "\' AND followinguser = \'" +username +"\'");
+        if(rs1.next()){
+            followStmt.execute("DELETE FROM follows WHERE followeduser =\'" +userToFollow+
+                    "\' AND followinguser = \'" +username +"\'");
+
+            System.out.println("You have unfollowed "+userToFollow);
+            return Context.loggedIn;
+        }
+        else{
+            followStmt.execute("INSERT INTO follows VALUES(\'"+ userToFollow +"\',\'"+username +"\')");
+            System.out.println("You are now following "+ userToFollow);
+            return Context.loggedIn;
         }
     }
 
