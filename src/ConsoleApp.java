@@ -120,14 +120,24 @@ public class ConsoleApp {
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("Please input your collection name as:\n<collectionName>");
+            System.out.println("Please input any number of search or sort terms. " +
+                    "Terms must be either [name/genre/release/studio/director/actor] <desired_value> or sort [name/studio/genre/release] [ascending/descending]." +
+                    "Later sorts take precedence over earlier ones.");
             return Context.search;
         }
         String[] input = command.split(" ");
         String whereClause = " WHERE ";
         boolean wherePresent = false;
+        String orderClause = " ORDER BY ";
+        String sortClause = "name ASC, releasedate ASC";
         for (int i = 0; i < input.length; i++)
         {
+            // TODO test code for searching by actors once actors are populated
+            if (input.length - i <= 1)
+            {
+                System.out.println("Dangling search term " + input[i] + ". Terms must be either [name/genre/release/studio/director/actor] <desired_value> or sort [name/studio/genre/release] [ascending/descending].");
+                return Context.search;
+            }
             if (input[i].equals("") || input[i].equals(" ") || input[i].equals("\n"))
             {
                 continue;
@@ -178,7 +188,7 @@ public class ConsoleApp {
                 String desiredDate = input[i];
                 try {
                     java.sql.Date date = Date.valueOf(desiredDate);
-                    whereClause += "releasedate=" + date;
+                    whereClause += "releasedate=\'" + date + "\'";
                 } catch (IllegalArgumentException e)
                 {
                     System.out.println(desiredDate + " is not a valid date. Please format release date terms as:\nrelease <yyyy>-<mm>-<dd>");
@@ -270,12 +280,57 @@ public class ConsoleApp {
                     System.out.println("Unable to find actor " + desiredActor + ".");
                     return Context.search;
                 }
-            } else
+            } else if (input[i].toLowerCase().equals("sort"))
+            {
+                if (input.length - i <= 2)
+                {
+                    System.out.println("Incorrect number of terms for sort. Sort terms must be structured as:\nsort <type> [ascending/descending]");
+                    return Context.search;
+                }
+                i++;
+                String type = input[i].toLowerCase();
+                i++;
+                String ad = input[i].toLowerCase();
+                String term = "";
+
+                if (type.equals("name"))
+                {
+                    term += "name ";
+                } else if (type.equals("studio"))
+                {
+                    term += "studio ";
+                } else if (type.equals("genre"))
+                {
+                    term += "genre ";
+                } else if (type.equals("release"))
+                {
+                    term += "releasedate ";
+                } else
+                {
+                    System.out.println("Unknown sort term " + term + ".");
+                    return Context.search;
+                }
+
+                if (ad.equals("ascending"))
+                {
+                    term += "ASC";
+                } else if (ad.equals("descending"))
+                {
+                    term += "DESC";
+                } else
+                {
+                    System.out.println("Please input the sort direction as either ascending or descending, not " + ad + ".");
+                    return Context.search;
+                }
+
+                term += ", ";
+                sortClause = term + sortClause;
+            }
+            else
             {
                 System.out.println("Unknown search term " + input[i] + ".");
                 return Context.search;
             }
-            // TODO add different sort modifiers.
         }
 
         Statement listStatement = conn.createStatement();
@@ -284,6 +339,7 @@ public class ConsoleApp {
         {
             select += whereClause;
         }
+        select += orderClause + sortClause;
         System.out.println(select);
         ResultSet rs = listStatement.executeQuery(select);
         System.out.println("The movies matching your search are:");
@@ -299,7 +355,7 @@ public class ConsoleApp {
                     name += nameIn.charAt(i);
                 }
             }
-            System.out.print(name);
+            System.out.print(nameIn);
 
             System.out.print(" is directed by ");
             int directorID = rs.getInt("directorid");
