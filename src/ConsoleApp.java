@@ -782,8 +782,6 @@ public class ConsoleApp {
     }
 
     private Context tryPlay(String command) throws SQLException {
-        // TODO add code for ratings
-        // TODO add code for repeat plays
         String[] input = command.split(" ");
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop") || command.toLowerCase().equals("back"))
         {
@@ -854,6 +852,21 @@ public class ConsoleApp {
             {
                 Statement updateStatement = conn.createStatement();
                 updateStatement.execute("UPDATE watches SET \"watchCount\"=\"watchCount\"+1 WHERE username=\'" + username + "\' AND moviename=\'" + movie + "\';");
+
+                if (rating != 0 && ws.getInt("rating") != 0)
+                {
+                    Statement oldRatings = conn.createStatement();
+                    ResultSet oldSet = oldRatings.executeQuery("SELECT * from movie WHERE name=\'" + movie + "\';");
+                    oldSet.next();
+                    Statement removeOld = conn.createStatement();
+                    if (oldSet.getInt("userratingcount") == 1)
+                    {
+                        removeOld.execute("UPDATE movie SET userratingcount=0, userratingavgscore=0.0 WHERE name=\'" + movie + "\';");
+                    } else
+                    {
+                        removeOld.execute("UPDATE movie SET userratingcount=userratingcount-1, userratingavgscore=((userratingavgscore*userratingcount)-" + oldSet.getInt("userratingcount") + ")/(userratingcount-1) WHERE name=\'" + movie + "\';");
+                    }
+                }
             } else
             {
                 Statement updateStatement = conn.createStatement();
@@ -863,39 +876,13 @@ public class ConsoleApp {
 
             if (rating != 0)
             {
-                // TODO update rating
+                Statement newRating = conn.createStatement();
+                newRating.execute("UPDATE movie SET userratingcount=userratingcount+1, userratingavgscore=((userratingavgscore*userratingcount)+" + rating + ")/(userratingcount+1) WHERE name=\'" + movie + "\';");
+                newRating.execute("UPDATE watches SET rating=" + rating + "WHERE username=\'" + username + "\' AND moviename=\'" + movie + "\';");
             }
         }
 
         return Context.play;
-        /*
-        if(rs21.next()){
-            userToFollow = rs21.getString(1);
-        }
-        else
-        {
-            userToFollow = input[0];
-        }
-        ResultSet rs0 = followStmt.executeQuery("SELECT username from account WHERE username=\'" + userToFollow + "\'");
-        if (rs0.next()) {
-            ResultSet rs1 = followStmt.executeQuery("SELECT followinguser FROM follows WHERE followeduser =\'"
-                    + userToFollow + "\' AND followinguser = \'" + username + "\'");
-            if (rs1.next()) {
-                followStmt.execute("DELETE FROM follows WHERE followeduser =\'" + userToFollow +
-                        "\' AND followinguser = \'" + username + "\'");
-
-                System.out.println("You have unfollowed " + userToFollow);
-                return Context.loggedIn;
-            } else {
-                followStmt.execute("INSERT INTO follows VALUES(\'" + userToFollow + "\',\'" + username + "\')");
-                System.out.println("You are now following " + userToFollow);
-                return Context.loggedIn;
-            }
-        } else
-        {
-            System.out.println("Unable to find user " + userToFollow + ".");
-            return Context.follow;
-        } */
     }
 
     private Context tryCreateUser(String command) throws SQLException {
