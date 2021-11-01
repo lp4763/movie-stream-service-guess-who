@@ -1,5 +1,6 @@
 import javax.xml.transform.Result;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -674,10 +675,17 @@ public class ConsoleApp {
                 "WHERE username=\'" + username + "\' ORDER BY name ASC;");
         while (rs.next())
         {
+            int totalLength = rs.getInt("totalLength");
+            int hours = totalLength/60;
+            int minutes = totalLength%60;
+            String formatMin =String.format(":%d",minutes);
+            if(minutes<10)
+                formatMin = String.format(":0%d",minutes);
+
             System.out.println("Collection " + rs.getString("name") +
                     " contains " + rs.getInt("movieNumber") +
                     " movies, with a total length of "
-                    + rs.getInt("totalLength") + " minutes");
+                    +hours+ formatMin);
         }
         return Context.collection;
     }
