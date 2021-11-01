@@ -9,8 +9,8 @@ import java.util.function.Function;
 public class ConsoleApp {
 
     private enum Context { exit, login, createUser, loggedIn,
-        collection, createCollection, listCollections, deleteCollection, renameCollection, editCollection, openCollection,
-        search, follow, play}
+        collection, createCollection, listCollections, deleteCollection,
+        renameCollection, editCollection, openCollection, search, follow, play}
 
     private String username;
     private Connection conn;
@@ -31,13 +31,17 @@ public class ConsoleApp {
                         System.out.println("Please log in using by entering your username and password:");
                         break;
                     case createUser:
-                        System.out.println("Please create a new user by entering your username, password, firstname, lastname, and email.");
+                        System.out.println("Please create a new user by entering your" +
+                                " username, password, firstname, lastname, and email.");
                         break;
                     case loggedIn:
-                        System.out.println("You are logged in. Please enter a command, such as search, collection, follow, or play. Enter help for more information.");
+                        System.out.println("You are logged in. Please enter a command," +
+                                " such as search, collection, follow, or play. " +
+                                "Enter help for more information.");
                         break;
                     case collection:
-                        System.out.println("Please input a collection specific command such as create, list, edit, delete, rename, open, or play.");
+                        System.out.println("Please input a collection specific command " +
+                                "such as create, list, edit, delete, rename, open, or play.");
                         break;
                     case createCollection:
                         System.out.println("Please input the name of the collection you want to create.");
@@ -49,19 +53,25 @@ public class ConsoleApp {
                         System.out.println("Please input the name of the collection you want to delete.");
                         break;
                     case renameCollection:
-                        System.out.println("Please input the name of the collection you want to rename, followed by the new name.");
+                        System.out.println("Please input the name of the " +
+                                "collection you want to rename, followed by the new name.");
                         break;
                     case openCollection:
-                        System.out.println("Please input the name of the collection you want to open and see the movies in.");
+                        System.out.println("Please input the name of the collection" +
+                                " you want to open and see the movies in.");
                         break;
                     case search:
-                        System.out.println("Please input the terms of your search, or nothing to see all movies.");
+                        System.out.println("Please input the terms of your search," +
+                                " or nothing to see all movies.");
                         break;
                     case follow:
-                        System.out.println("Please input the name of the user you want to follow/unfollow.");
+                        System.out.println("Please input the name of the user" +
+                                " you want to follow/unfollow.");
                         break;
                     case play:
-                        System.out.println("Please input the name of the movie or collection you wish to play, optionally followed by the rating you wish to give it.");
+                        System.out.println("Please input the name of the movie or" +
+                                " collection you wish to play, optionally followed by" +
+                                " the rating you wish to give it.");
                         break;
 
                 }
@@ -71,7 +81,10 @@ public class ConsoleApp {
                 } else {
                     if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
                     {
-                        System.out.println("At any time, you may enter quit or exit to exit the application; cancel, stop, or back to return to a prior operation, or help or ? to get information about what to enter in a given context.");
+                        System.out.println("At any time, you may enter quit or " +
+                                "exit to exit the application; cancel, stop, or back to return " +
+                                "to a prior operation, or help or ? to get information " +
+                                "about what to enter in a given context.");
                     }
                     switch (current) {
                         case login:
@@ -134,7 +147,8 @@ public class ConsoleApp {
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
             System.out.println("Please input any number of search or sort terms. " +
-                    "Terms must be either [name/genre/release/studio/director/actor] <desired_value> or sort [name/studio/genre/release] [ascending/descending]." +
+                    "Terms must be either [name/genre/release/studio/director/actor] <desired_value>" +
+                    " or sort [name/studio/genre/release] [ascending/descending]." +
                     "Later sorts take precedence over earlier ones." +
                     "Names with spaces in them should have the spaces input as '_'.");
             return Context.search;
@@ -152,7 +166,10 @@ public class ConsoleApp {
                 continue;
             } else if (input.length - i <= 1)
             {
-                System.out.println("Dangling search term " + input[i] + ". Terms must be either [name/genre/release/studio/director/actor] <desired_value> or sort [name/studio/genre/release] [ascending/descending]. Names with spaces in them should have the spaces input as '_'.");
+                System.out.println("Dangling search term " + input[i] +
+                        ". Terms must be either [name/genre/release/studio/director/actor] <desired_value>" +
+                        " or sort [name/studio/genre/release] [ascending/descending]. " +
+                        "Names with spaces in them should have the spaces input as '_'.");
                 return Context.search;
             } else if (input[i].toLowerCase().equals("name"))
             {
@@ -194,7 +211,8 @@ public class ConsoleApp {
                     whereClause += "releasedate=\'" + date + "\'";
                 } catch (IllegalArgumentException e)
                 {
-                    System.out.println(desiredDate + " is not a valid date. Please format release date terms as:\nrelease <yyyy>-<mm>-<dd>");
+                    System.out.println(desiredDate + " is not a valid date. " +
+                            "Please format release date terms as:\nrelease <yyyy>-<mm>-<dd>");
                     return Context.search;
                 }
             } else if (input[i].toLowerCase().equals("studio"))
@@ -221,7 +239,8 @@ public class ConsoleApp {
                 i++;
                 String desiredDirector = underToSpace(input[i]);
                 Statement directorStatement = conn.createStatement();
-                ResultSet ds = directorStatement.executeQuery("SELECT * FROM person WHERE name=\'" + desiredDirector + "\';");
+                ResultSet ds = directorStatement.executeQuery("SELECT * FROM person" +
+                        " WHERE name=\'" + desiredDirector + "\';");
                 if (ds.next())
                 {
                     int directorID = ds.getInt("personid");
@@ -243,7 +262,8 @@ public class ConsoleApp {
                 i++;
                 String desiredActor = underToSpace(input[i]);
                 Statement actorStatement = conn.createStatement();
-                ResultSet as = actorStatement.executeQuery("SELECT * FROM person WHERE name=\'" + desiredActor + "\';");
+                ResultSet as = actorStatement.executeQuery("SELECT * FROM person" +
+                        " WHERE name=\'" + desiredActor + "\';");
                 if (as.next())
                 {
                     int personID = as.getInt("personid");
@@ -257,7 +277,8 @@ public class ConsoleApp {
             {
                 if (input.length - i <= 2)
                 {
-                    System.out.println("Incorrect number of terms for sort. Sort terms must be structured as:\nsort <type> [ascending/descending]");
+                    System.out.println("Incorrect number of terms for sort. Sort terms must be" +
+                            " structured as:\nsort <type> [ascending/descending]");
                     return Context.search;
                 }
                 i++;
@@ -292,7 +313,8 @@ public class ConsoleApp {
                     term += "DESC";
                 } else
                 {
-                    System.out.println("Please input the sort direction as either ascending or descending, not " + ad + ".");
+                    System.out.println("Please input the sort direction as" +
+                            " either ascending or descending, not " + ad + ".");
                     return Context.search;
                 }
 
@@ -333,19 +355,22 @@ public class ConsoleApp {
             System.out.print(" is directed by ");
             int directorID = rs.getInt("directorid");
             Statement directorStatement = conn.createStatement();
-            ResultSet ds = directorStatement.executeQuery("SELECT * FROM person WHERE personid=" + directorID);
+            ResultSet ds = directorStatement.executeQuery("SELECT * FROM person" +
+                    " WHERE personid=" + directorID);
             ds.next();
             System.out.print(ds.getString("name"));
 
             System.out.print(", is acted by ");
             Statement actIdsStatement = conn.createStatement();
-            ResultSet ais = actIdsStatement.executeQuery("SELECT * FROM actsin WHERE moviename=\'" + name + "\';");
+            ResultSet ais = actIdsStatement.executeQuery("SELECT * FROM actsin" +
+                    " WHERE moviename=\'" + name + "\';");
             boolean isActed = false;
             while (ais.next())
             {
                 isActed = true;
                 Statement actorStatment = conn.createStatement();
-                ResultSet as = actorStatment.executeQuery("SELECT * FROM person WHERE personid=" + ais.getInt("personid"));
+                ResultSet as = actorStatment.executeQuery("SELECT * FROM person" +
+                        " WHERE personid=" + ais.getInt("personid"));
                 as.next();
                 System.out.print(as.getString("name") + ", ");
             }
@@ -358,7 +383,8 @@ public class ConsoleApp {
 
             System.out.print(" is rated " + rs.getString("mpaarating") + ", and");
 
-            System.out.print(" has an average user score of " + rs.getFloat("userratingavgscore") + " stars.");
+            System.out.print(" has an average user score of "
+                    + rs.getFloat("userratingavgscore") + " stars.");
 
             System.out.println();
         }
@@ -374,7 +400,9 @@ public class ConsoleApp {
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("Please input your collection name, and desired edit as:\n<collectionName> [add/remove] <moviename>. Names with spaces in them should have the spaces input as '_'.");
+            System.out.println("Please input your collection name, and desired" +
+                    " edit as:\n<collectionName> [add/remove] <moviename>." +
+                    " Names with spaces in them should have the spaces input as '_'.");
             return Context.openCollection;
         }
         String[] input = command.split(" ");
@@ -382,16 +410,20 @@ public class ConsoleApp {
         {
             if (input[0].length() < 1 || input[0].length() > 63)
             {
-                System.out.println("Your input does not match format requirements. Please make sure your collection name is between 1 and 63 characters in length.");
+                System.out.println("Your input does not match format requirements." +
+                        " Please make sure your collection name is" +
+                        " between 1 and 63 characters in length.");
                 return Context.openCollection;
             } else
             {
                 Statement foundStatement = conn.createStatement();
-                ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection" +
+                        " WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
                 if (rs.next())
                 {
                     Statement listStatement = conn.createStatement();
-                    rs = listStatement.executeQuery("SELECT * FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\';");
+                    rs = listStatement.executeQuery("SELECT * FROM contains WHERE username=\'"
+                            + username + "\' AND collectionname=\'" + input[0]+ "\';");
                     System.out.println("Collection " + input[0] + " contains:");
                     while (rs.next())
                     {
@@ -420,7 +452,8 @@ public class ConsoleApp {
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("Please input your collection name, add or remove, and the movie name as:\n<collectionName> [add/remove] <movie name>");
+            System.out.println("Please input your collection name, add or remove, " +
+                    "and the movie name as:\n<collectionName> [add/remove] <movie name>");
             return Context.renameCollection;
         }
         String[] input = command.split(" ");
@@ -428,29 +461,39 @@ public class ConsoleApp {
         {
             if (input[0].length() < 1 || input[0].length() > 63)
             {
-                System.out.println("Your input does not match format requirements. Please make sure your collection name is between 1 and 63 characters in length.");
+                System.out.println("Your input does not match format requirements." +
+                        " Please make sure your collection name is between" +
+                        " 1 and 63 characters in length.");
                 return Context.editCollection;
             } else if (!(input[1].toLowerCase().equals("add") || input[1].toLowerCase().equals("remove")))
             {
-                System.out.println("Your input does not match format requirements. Please make sure you input whether you want to add or remove the movie.");
+                System.out.println("Your input does not match format requirements. " +
+                        "Please make sure you input whether you want to add or remove the movie.");
                 return Context.editCollection;
             } else if (input[2].length() < 1 || input[1].length() > 63)
             {
-                System.out.println("Your input does not match format requirements. Please make sure your movie name is between 1 and 63 characters in length.");
+                System.out.println("Your input does not match format requirements." +
+                        " Please make sure your movie name is between 1 and 63 characters in length.");
                 return Context.editCollection;
             } else
             {
                 String moviename = underToSpace(input[2]);
                 System.out.println(moviename);
                 Statement foundCStatement = conn.createStatement();
-                ResultSet cs = foundCStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                ResultSet cs = foundCStatement.executeQuery("SELECT username FROM" +
+                        " collection WHERE username=\'"
+                        + username + "\' AND name=\'" + input[0] + "\';");
                 if (cs.next())
                 {
                     Statement foundMStatement = conn.createStatement();
-                    ResultSet ms = foundMStatement.executeQuery("SELECT * FROM movie WHERE name=\'" + moviename + "\';");
+                    ResultSet ms = foundMStatement.executeQuery("SELECT * FROM movie " +
+                            "WHERE name=\'" + moviename + "\';");
                     if (ms.next()) {
                         Statement foundRStatement = conn.createStatement();
-                        ResultSet rs = foundRStatement.executeQuery("SELECT * FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\' AND moviename=\'" + moviename + "\';");
+                        ResultSet rs = foundRStatement.executeQuery("SELECT * FROM contains" +
+                                " WHERE username=\'" + username +
+                                "\' AND collectionname=\'" + input[0]+
+                                "\' AND moviename=\'" + moviename + "\';");
                         if (input[1].toLowerCase().equals("add"))
                         {
                             if (rs.next())
@@ -460,8 +503,13 @@ public class ConsoleApp {
                             } else
                             {
                                 int length = ms.getInt("length");
-                                foundCStatement.execute("UPDATE collection SET totallength=totallength+" + length + " WHERE username=\'" + username + "\' AND name=\'" + input[0]+ "\';");
-                                foundCStatement.execute("UPDATE collection SET movienumber=movienumber+1 WHERE username=\'" + username + "\' AND name=\'" + input[0]+ "\';");
+                                foundCStatement.execute("UPDATE collection " +
+                                        "SET totallength=totallength+" + length +
+                                        " WHERE username=\'" + username + "\' AND name=\'"
+                                        + input[0]+ "\';");
+                                foundCStatement.execute("UPDATE collection SET " +
+                                        "movienumber=movienumber+1 WHERE username=\'"
+                                        + username + "\' AND name=\'" + input[0]+ "\';");
 
                                 Statement addContainsStatement = conn.createStatement();
                                 String values = formatForInsert(new String[] {input[0], username, moviename});
@@ -474,11 +522,18 @@ public class ConsoleApp {
                             if (rs.next())
                             {
                                 int length = ms.getInt("length");
-                                foundCStatement.execute("UPDATE collection SET totallength=totallength-" + length + " WHERE username=\'" + username + "\' AND name=\'" + input[0]+ "\';");
-                                foundCStatement.execute("UPDATE collection SET movienumber=movienumber-1 WHERE username=\'" + username + "\' AND name=\'" + input[0]+ "\';");
+                                foundCStatement.execute("UPDATE collection SET" +
+                                        " totallength=totallength-" + length +
+                                        " WHERE username=\'" + username + "\' AND name=\'"
+                                        + input[0]+ "\';");
+                                foundCStatement.execute("UPDATE collection SET " +
+                                        "movienumber=movienumber-1 WHERE username=\'" + username +
+                                        "\' AND name=\'" + input[0]+ "\';");
 
                                 Statement deleteContainsStatement = conn.createStatement();
-                                deleteContainsStatement.execute("DELETE FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\' AND moviename=\'" + moviename + "\';");
+                                deleteContainsStatement.execute("DELETE FROM contains WHERE username=\'"
+                                        + username + "\' AND collectionname=\'" + input[0]+
+                                        "\' AND moviename=\'" + moviename + "\';");
                                 return Context.collection;
                             } else
                             {
@@ -499,7 +554,8 @@ public class ConsoleApp {
             }
         } else
         {
-            System.out.println("Please input your collection name, add or remove, and the movie name as:\n<collectionName> [add/remove] <movie name>");
+            System.out.println("Please input your collection name, add or remove, and the " +
+                    "movie name as:\n<collectionName> [add/remove] <movie name>");
             return Context.editCollection;
         }
 
@@ -526,7 +582,8 @@ public class ConsoleApp {
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("Please input your collection name and new name as:\n<collectionName> <new name>");
+            System.out.println("Please input your collection name and new name " +
+                    "as:\n<collectionName> <new name>");
             return Context.renameCollection;
         }
         String[] input = command.split(" ");
@@ -534,20 +591,26 @@ public class ConsoleApp {
         {
             if (input[0].length() < 1 || input[0].length() > 63)
             {
-                System.out.println("Your input does not match format requirements. Please make sure your collection name is between 1 and 63 characters in length.");
+                System.out.println("Your input does not match format requirements." +
+                        " Please make sure your collection name is between 1 and 63 characters in length.");
                 return Context.deleteCollection;
             } else if (input[1].length() < 1 || input[1].length() > 63)
             {
-                System.out.println("Your input does not match format requirements. Please make sure your new collection name is between 1 and 63 characters in length.");
+                System.out.println("Your input does not match format requirements." +
+                        " Please make sure your new collection name is between 1 and 63 characters in length.");
                 return Context.deleteCollection;
             } else
             {
                 Statement foundStatement = conn.createStatement();
-                ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                ResultSet rs = foundStatement.executeQuery("SELECT username FROM " +
+                        "collection WHERE username=\'" + username +
+                        "\' AND name=\'" + input[0] + "\';");
                 if (rs.next())
                 {
                     Statement deleteCollectionStatement = conn.createStatement();
-                    deleteCollectionStatement.execute("UPDATE collection SET name=\'"+ input[1] + "\' WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                    deleteCollectionStatement.execute("UPDATE collection SET name=\'"
+                            + input[1] + "\' WHERE username=\'" + username +
+                            "\' AND name=\'" + input[0] + "\';");
                     return Context.collection;
                 } else
                 {
@@ -557,7 +620,8 @@ public class ConsoleApp {
             }
         } else
         {
-            System.out.println("Please input your collection name and new name as:\n<collectionName> <new name>");
+            System.out.println("Please input your collection name and new name " +
+                    "as:\n<collectionName> <new name>");
             return Context.renameCollection;
         }
     }
@@ -577,16 +641,19 @@ public class ConsoleApp {
         {
             if (input[0].length() < 1 || input[0].length() > 63)
             {
-                System.out.println("Your input does not match format requirements. Please make sure your collection name is between 1 and 63 characters in length.");
+                System.out.println("Your input does not match format requirements. " +
+                        "Please make sure your collection name is between 1 and 63 characters in length.");
                 return Context.deleteCollection;
             } else
             {
                 Statement foundStatement = conn.createStatement();
-                ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection" +
+                        " WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
                 if (rs.next())
                 {
                     Statement deleteCollectionStatement = conn.createStatement();
-                    deleteCollectionStatement.execute("DELETE FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                    deleteCollectionStatement.execute("DELETE FROM collection " +
+                            "WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
                     return Context.collection;
                 } else
                 {
@@ -603,10 +670,14 @@ public class ConsoleApp {
 
     private Context tryListCollections() throws SQLException {
         Statement listStatement = conn.createStatement();
-        ResultSet rs = listStatement.executeQuery("SELECT * FROM collection WHERE username=\'" + username + "\' ORDER BY name ASC;");
+        ResultSet rs = listStatement.executeQuery("SELECT * FROM collection " +
+                "WHERE username=\'" + username + "\' ORDER BY name ASC;");
         while (rs.next())
         {
-            System.out.println("Collection " + rs.getString("name") + " contains " + rs.getInt("movieNumber") + " movies, with a total length of " + rs.getInt("totalLength") + " minutes");
+            System.out.println("Collection " + rs.getString("name") +
+                    " contains " + rs.getInt("movieNumber") +
+                    " movies, with a total length of "
+                    + rs.getInt("totalLength") + " minutes");
         }
         return Context.collection;
     }
@@ -626,15 +697,19 @@ public class ConsoleApp {
         {
             if (input[0].length() < 1 || input[0].length() > 63)
             {
-                System.out.println("Your input does not match format requirements. Please make sure your collection name is between 1 and 63 characters in length.");
+                System.out.println("Your input does not match format requirements." +
+                        " Please make sure your collection name is between 1 and 63" +
+                        " characters in length.");
                 return Context.createCollection;
             } else
             {
                 Statement foundStatement = conn.createStatement();
-                ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                ResultSet rs = foundStatement.executeQuery("SELECT username FROM " +
+                        "collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
                 if (rs.next())
                 {
-                    System.out.println("You may only have one collection with a given name. You may want to edit instead, or create a collection with a different name.");
+                    System.out.println("You may only have one collection with a given name." +
+                            " You may want to edit instead, or create a collection with a different name.");
                     return Context.createCollection;
                 }
 
@@ -658,7 +733,8 @@ public class ConsoleApp {
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("Please input a collection specific command such as create, list, edit, delete, rename, or open.");
+            System.out.println("Please input a collection specific command " +
+                    "such as create, list, edit, delete, rename, or open.");
             return Context.collection;
         }
         String[] input = command.split(" ");
@@ -783,19 +859,26 @@ public class ConsoleApp {
 
     private Context tryPlay(String command) throws SQLException {
         String[] input = command.split(" ");
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop") || command.toLowerCase().equals("back"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             return Context.loggedIn;
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("Please input the name of the movie or collection you wish to play, optionally followed by the rating you wish to give it. Please replace any spaces in names with underscores. Format as:\n<movie_name>/<collectionName> (rating 1-5)");
+            System.out.println("Please input the name of the movie or collection you wish to play," +
+                    " optionally followed by the rating you wish to give it." +
+                    " Please replace any spaces in names with underscores. " +
+                    "Format as:\n<movie_name>/<collectionName> (rating 1-5)");
             return Context.play;
         }
         if(input.length < 1 || input.length > 2)
         {
             System.out.println("Your input does not match format requirements. " +
-                    "Please input the name of the movie or collection you wish to play, optionally followed by the rating you wish to give it. Please replace any spaces in names with underscores. Format as:\n<movie_name>/<collectionName> (rating 1-5)");
+                    "Please input the name of the movie or collection you wish to play, " +
+                    "optionally followed by the rating you wish to give it. " +
+                    "Please replace any spaces in names with underscores." +
+                    " Format as:\n<movie_name>/<collectionName> (rating 1-5)");
             return Context.play;
         }
         int rating = 0;
@@ -823,11 +906,13 @@ public class ConsoleApp {
             movieNames.add(mS.getString("name"));
         } else
         {
-            ResultSet cs = findStatement.executeQuery("SELECT * FROM collection WHERE name=\'" + name + "\' AND username=\'" + username + "\';");
+            ResultSet cs = findStatement.executeQuery("SELECT * FROM collection " +
+                    "WHERE name=\'" + name + "\' AND username=\'" + username + "\';");
             if (cs.next())
             {
                 Statement listStatement = conn.createStatement();
-                ResultSet rs = listStatement.executeQuery("SELECT * FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\';");
+                ResultSet rs = listStatement.executeQuery("SELECT * FROM contains " +
+                        "WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\';");
                 System.out.println("Playing from collection " + input[0] + ".");
                 while (rs.next())
                 {
@@ -846,25 +931,32 @@ public class ConsoleApp {
             System.out.println("Playing " + movie);
 
             Statement watchesStatement = conn.createStatement();
-            ResultSet ws = watchesStatement.executeQuery("SELECT * FROM watches WHERE username=\'" + username + "\' AND moviename=\'" + movie + "\';");
+            ResultSet ws = watchesStatement.executeQuery("SELECT * FROM watches" +
+                    " WHERE username=\'" + username + "\' AND moviename=\'" + movie + "\';");
 
             if (ws.next())
             {
                 Statement updateStatement = conn.createStatement();
-                updateStatement.execute("UPDATE watches SET \"watchCount\"=\"watchCount\"+1 WHERE username=\'" + username + "\' AND moviename=\'" + movie + "\';");
+                updateStatement.execute("UPDATE watches SET \"watchCount\"=\"watchCount\"+1 WHERE " +
+                        "username=\'" + username + "\' AND moviename=\'" + movie + "\';");
 
                 if (rating != 0 && ws.getInt("rating") != 0)
                 {
                     Statement oldRatings = conn.createStatement();
-                    ResultSet oldSet = oldRatings.executeQuery("SELECT * from movie WHERE name=\'" + movie + "\';");
+                    ResultSet oldSet = oldRatings.executeQuery("SELECT * from movie " +
+                            "WHERE name=\'" + movie + "\';");
                     oldSet.next();
                     Statement removeOld = conn.createStatement();
                     if (oldSet.getInt("userratingcount") == 1)
                     {
-                        removeOld.execute("UPDATE movie SET userratingcount=0, userratingavgscore=0.0 WHERE name=\'" + movie + "\';");
+                        removeOld.execute("UPDATE movie SET userratingcount=0, " +
+                                "userratingavgscore=0.0 WHERE name=\'" + movie + "\';");
                     } else
                     {
-                        removeOld.execute("UPDATE movie SET userratingcount=userratingcount-1, userratingavgscore=((userratingavgscore*userratingcount)-" + oldSet.getInt("userratingcount") + ")/(userratingcount-1) WHERE name=\'" + movie + "\';");
+                        removeOld.execute("UPDATE movie SET userratingcount=userratingcount-1," +
+                                " userratingavgscore=((userratingavgscore*userratingcount)-"
+                                + oldSet.getInt("userratingcount") +
+                                ")/(userratingcount-1) WHERE name=\'" + movie + "\';");
                     }
                 }
             } else
@@ -877,8 +969,11 @@ public class ConsoleApp {
             if (rating != 0)
             {
                 Statement newRating = conn.createStatement();
-                newRating.execute("UPDATE movie SET userratingcount=userratingcount+1, userratingavgscore=((userratingavgscore*userratingcount)+" + rating + ")/(userratingcount+1) WHERE name=\'" + movie + "\';");
-                newRating.execute("UPDATE watches SET rating=" + rating + "WHERE username=\'" + username + "\' AND moviename=\'" + movie + "\';");
+                newRating.execute("UPDATE movie SET userratingcount=userratingcount+1, " +
+                        "userratingavgscore=((userratingavgscore*userratingcount)+"
+                        + rating + ")/(userratingcount+1) WHERE name=\'" + movie + "\';");
+                newRating.execute("UPDATE watches SET rating=" + rating +
+                        "WHERE username=\'" + username + "\' AND moviename=\'" + movie + "\';");
             }
         }
 
@@ -886,51 +981,61 @@ public class ConsoleApp {
     }
 
     private Context tryCreateUser(String command) throws SQLException {
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop") || command.toLowerCase().equals("back"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             return Context.login;
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("Please input your new user info as:\n<username> <password> <firstname> <lastname> <email>");
+            System.out.println("Please input your new user info " +
+                    "as:\n<username> <password> <firstname> <lastname> <email>");
             return Context.createUser;
         }
         String[] input = command.split(" ");
         if (input.length != 5)
         {
-            System.out.println("Your input does not match format requirements. Please input your user info as:\n<username> <password> <firstname> <lastname> <email>");
+            System.out.println("Your input does not match format requirements. " +
+                    "Please input your user info as:\n<username> <password> <firstname> <lastname> <email>");
             return Context.createUser;
         }
         if (input[0].length() <= 0 || input[0].length() > 63)
         {
-            System.out.println("Your input does not match format requirements. Please make sure your username is between 1 and 63 characters in length.");
+            System.out.println("Your input does not match format requirements. " +
+                    "Please make sure your username is between 1 and 63 characters in length.");
             return Context.createUser;
         }
         if (input[1].length() <= 0 || input[1].length() > 63)
         {
-            System.out.println("Your input does not match format requirements. Please make sure your password is between 1 and 63 characters in length.");
+            System.out.println("Your input does not match format requirements." +
+                    " Please make sure your password is between 1 and 63 characters in length.");
             return Context.createUser;
         }
         if (input[2].length() <= 0 || input[2].length() > 63)
         {
-            System.out.println("Your input does not match format requirements. Please make sure your first name is between 1 and 63 characters in length.");
+            System.out.println("Your input does not match format requirements." +
+                    " Please make sure your first name is between 1 and 63 characters in length.");
             return Context.createUser;
         }
         if (input[3].length() <= 0 || input[3].length() > 63)
         {
-            System.out.println("Your input does not match format requirements. Please make sure your last name is between 1 and 63 characters in length.");
+            System.out.println("Your input does not match format requirements." +
+                    " Please make sure your last name is between 1 and 63 characters in length.");
             return Context.createUser;
         }
         if (input[4].length() <= 0 || input[4].length() > 63)
         {
-            System.out.println("Your input does not match format requirements. Please make sure your email is between 1 and 63 characters in length.");
+            System.out.println("Your input does not match format requirements." +
+                    " Please make sure your email is between 1 and 63 characters in length.");
             return Context.createUser;
         }
 
         Statement foundStatement = conn.createStatement();
-        ResultSet rs = foundStatement.executeQuery("SELECT password FROM account WHERE username=\'" + username + "\';");
+        ResultSet rs = foundStatement.executeQuery("SELECT password FROM account" +
+                " WHERE username=\'" + username + "\';");
         if (rs.next()) {
-            System.out.println("An account with this username already exists. Please select a different username.");
+            System.out.println("An account with this username already exists." +
+                    " Please select a different username.");
             return Context.createUser;
         }
 
@@ -940,7 +1045,8 @@ public class ConsoleApp {
         username = input[0];
 
         Statement createAccountStatement = conn.createStatement();
-        String values = formatForInsert(new String[] {input[0], input[1], input[2], input[3], sqlDate.toString(), input[4]});
+        String values = formatForInsert(new String[] {input[0], input[1], input[2],
+                input[3], sqlDate.toString(), input[4]});
         System.out.println(values);
         createAccountStatement.execute("INSERT INTO account VALUES " + values);
         // TODO re-add the code to update access dates on login, using the access date table
@@ -953,7 +1059,8 @@ public class ConsoleApp {
         {
             return Context.createUser;
         }
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop") || command.toLowerCase().equals("back"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             System.out.println("Unable to cancel. Logging in is necessary to use additional features.");
             return Context.login;
@@ -966,36 +1073,42 @@ public class ConsoleApp {
         String[] input = command.split(" ");
         if (input.length != 2)
         {
-            System.out.println("Your input does not match format requirements. Please input your username and password as:\n<username> <password>");
+            System.out.println("Your input does not match format requirements." +
+                    " Please input your username and password as:\n<username> <password>");
             return Context.login;
         }
         if (input[0].length() <= 0 || input[0].length() > 63)
         {
-            System.out.println("Your input does not match format requirements. Please make sure your username is between 1 and 63 characters in length.");
+            System.out.println("Your input does not match format requirements." +
+                    " Please make sure your username is between 1 and 63 characters in length.");
             return Context.login;
         }
         if (input[1].length() <= 0 || input[1].length() > 63)
         {
-            System.out.println("Your input does not match format requirements. Please make sure your password is between 1 and 63 characters in length.");
+            System.out.println("Your input does not match format requirements." +
+                    " Please make sure your password is between 1 and 63 characters in length.");
             return Context.login;
         }
 
         String usernameIn = input[0];
         String password = input[1];
         Statement loginStatement = conn.createStatement();
-        ResultSet rs = loginStatement.executeQuery("SELECT password FROM account WHERE username=\'" + usernameIn + "\' AND password=\'" + password + "\';");
+        ResultSet rs = loginStatement.executeQuery("SELECT password FROM account" +
+                " WHERE username=\'" + usernameIn + "\' AND password=\'" + password + "\';");
         if (rs.next())
         {
             this.username = input[0];
             Statement updateTimeStatement = conn.createStatement();
-            //updateTimeStatement.execute("UPDATE account SET lastaccessdate=current_date WHERE username='" + username + "';");
+            //updateTimeStatement.execute("UPDATE account SET
+            // lastaccessdate=current_date WHERE username='" + username + "';");
             // TODO re-add the code to update access dates on login, using the access date table
             return Context.loggedIn;
         }
         else
         {
             Statement foundStatement = conn.createStatement();
-            rs = foundStatement.executeQuery("SELECT password FROM account WHERE username=\'" + usernameIn + "\';");
+            rs = foundStatement.executeQuery("SELECT password FROM " +
+                    "account WHERE username=\'" + usernameIn + "\';");
             if (rs.next())
             {
                 System.out.println("Unable to log in. Please double check your username and password.");
@@ -1009,13 +1122,15 @@ public class ConsoleApp {
     private Context tryFollow(String command) throws SQLException
     {
         String[] input = command.split(" ");
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop") || command.toLowerCase().equals("back"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             return Context.loggedIn;
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("Please input the username or email of the user you want to follow or unfollow as\n<username>");
+            System.out.println("Please input the username or email of the user " +
+                    "you want to follow or unfollow as\n<username>");
             return Context.follow;
         }
         if(input.length != 1)
@@ -1033,7 +1148,8 @@ public class ConsoleApp {
 
         String userToFollow = "";
 
-        ResultSet rs21 = followStmt.executeQuery("SELECT username FROM account WHERE email = \'"+input[0]+"\'");
+        ResultSet rs21 = followStmt.executeQuery("SELECT username FROM account" +
+                " WHERE email = \'"+input[0]+"\'");
 
         if(rs21.next()){
              userToFollow = rs21.getString(1);
@@ -1042,10 +1158,12 @@ public class ConsoleApp {
         {
             userToFollow = input[0];
         }
-        ResultSet rs0 = followStmt.executeQuery("SELECT username from account WHERE username=\'" + userToFollow + "\'");
+        ResultSet rs0 = followStmt.executeQuery("SELECT username FROM account" +
+                " WHERE username=\'" + userToFollow + "\'");
         if (rs0.next()) {
-            ResultSet rs1 = followStmt.executeQuery("SELECT followinguser FROM follows WHERE followeduser =\'"
-                    + userToFollow + "\' AND followinguser = \'" + username + "\'");
+            ResultSet rs1 = followStmt.executeQuery("SELECT followinguser FROM follows" +
+                    " WHERE followeduser =\'" + userToFollow +
+                    "\' AND followinguser = \'" + username + "\'");
             if (rs1.next()) {
                 followStmt.execute("DELETE FROM follows WHERE followeduser =\'" + userToFollow +
                         "\' AND followinguser = \'" + username + "\'");
@@ -1053,7 +1171,8 @@ public class ConsoleApp {
                 System.out.println("You have unfollowed " + userToFollow);
                 return Context.loggedIn;
             } else {
-                followStmt.execute("INSERT INTO follows VALUES(\'" + userToFollow + "\',\'" + username + "\')");
+                followStmt.execute("INSERT INTO follows VALUES(\'"
+                        + userToFollow + "\',\'" + username + "\')");
                 System.out.println("You are now following " + userToFollow);
                 return Context.loggedIn;
             }
