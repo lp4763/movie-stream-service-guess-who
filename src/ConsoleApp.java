@@ -11,7 +11,6 @@ public class ConsoleApp {
         collection, createCollection, listCollections, deleteCollection, renameCollection, editCollection, openCollection,
         search}
 
-    // TODO update this to use the account object, rather than hard coding the username.
     private String username;
 
     public ConsoleApp(Connection nConn)
@@ -112,8 +111,6 @@ public class ConsoleApp {
     }
 
     private Context trySearch(Connection conn, String command) throws SQLException {
-        // TODO Make sure this is sorting in accordance with requirements
-        // TODO test this once we have actual movies
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
         {
             return Context.loggedIn;
@@ -122,7 +119,8 @@ public class ConsoleApp {
         {
             System.out.println("Please input any number of search or sort terms. " +
                     "Terms must be either [name/genre/release/studio/director/actor] <desired_value> or sort [name/studio/genre/release] [ascending/descending]." +
-                    "Later sorts take precedence over earlier ones.");
+                    "Later sorts take precedence over earlier ones." +
+                    "Names with spaces in them should have the spaces input as '_'.");
             return Context.search;
         }
         String[] input = command.split(" ");
@@ -135,7 +133,7 @@ public class ConsoleApp {
             // TODO test code for searching by actors once actors are populated
             if (input.length - i <= 1)
             {
-                System.out.println("Dangling search term " + input[i] + ". Terms must be either [name/genre/release/studio/director/actor] <desired_value> or sort [name/studio/genre/release] [ascending/descending].");
+                System.out.println("Dangling search term " + input[i] + ". Terms must be either [name/genre/release/studio/director/actor] <desired_value> or sort [name/studio/genre/release] [ascending/descending]. Names with spaces in them should have the spaces input as '_'.");
                 return Context.search;
             }
             if (input[i].equals("") || input[i].equals(" ") || input[i].equals("\n"))
@@ -151,17 +149,7 @@ public class ConsoleApp {
                     wherePresent = true;
                 }
                 i++;
-                String inputS = input[i];
-                String desiredName = "";
-                for (int j = 0; j < inputS.length(); j++)
-                {
-                    if (inputS.charAt(j) == '_')
-                    {
-                        desiredName += ' ';
-                    } else {
-                        desiredName += inputS.charAt(j);
-                    }
-                }
+                String desiredName = underToSpace(input[i]);
                 whereClause += "name LIKE \'%" + desiredName + "%\'";
             } else if (input[i].toLowerCase().equals("genre"))
             {
@@ -204,17 +192,7 @@ public class ConsoleApp {
                     wherePresent = true;
                 }
                 i++;
-                String desiredStudio = "";
-                String inputS = input[i];
-                for (int j = 0; j < inputS.length(); j++)
-                {
-                    if (inputS.charAt(j) == '_')
-                    {
-                        desiredStudio += ' ';
-                    } else {
-                        desiredStudio += inputS.charAt(j);
-                    }
-                }
+                String desiredStudio = underToSpace(input[i]);
                 whereClause += "studio LIKE \'%" + desiredStudio + "%\'";
             } else if (input[i].toLowerCase().equals("director"))
             {
@@ -226,17 +204,7 @@ public class ConsoleApp {
                     wherePresent = true;
                 }
                 i++;
-                String desiredDirector = "";
-                String inputS = input[i];
-                for (int j = 0; j < inputS.length(); j++)
-                {
-                    if (inputS.charAt(j) == '_')
-                    {
-                        desiredDirector += ' ';
-                    } else {
-                        desiredDirector += inputS.charAt(j);
-                    }
-                }
+                String desiredDirector = underToSpace(input[i]);
                 Statement directorStatement = conn.createStatement();
                 ResultSet ds = directorStatement.executeQuery("SELECT * FROM person WHERE name=\'" + desiredDirector + "\';");
                 if (ds.next())
@@ -258,17 +226,7 @@ public class ConsoleApp {
                     wherePresent = true;
                 }
                 i++;
-                String desiredActor = "";
-                String inputS = input[i];
-                for (int j = 0; j < inputS.length(); j++)
-                {
-                    if (inputS.charAt(j) == '_')
-                    {
-                        desiredActor += ' ';
-                    } else {
-                        desiredActor += inputS.charAt(j);
-                    }
-                }
+                String desiredActor = underToSpace(input[i]);
                 Statement actorStatement = conn.createStatement();
                 ResultSet as = actorStatement.executeQuery("SELECT * FROM person WHERE name=\'" + desiredActor + "\';");
                 if (as.next())
@@ -389,42 +347,6 @@ public class ConsoleApp {
             System.out.println();
         }
         return Context.search;
-
-        /*if (input.length == 1)
-        {
-            if (input[0].length() < 1 || input[0].length() > 63)
-            {
-                System.out.println("Your input does not match format requirements. Please make sure your collection name is between 1 and 63 characters in length.");
-                return Context.openCollection;
-            } else
-            {
-                // TODO update this to use the moviecollection object
-                Statement foundStatement = conn.createStatement();
-                ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
-                if (rs.next())
-                {
-
-                    // TODO Fix this to instead use movieCollection objects, rather than hard coded SQL
-                    Statement listStatement = conn.createStatement();
-                    rs = listStatement.executeQuery("SELECT * FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\';");
-                    System.out.println("Collection " + input[0] + " contains:");
-                    while (rs.next())
-                    {
-                        System.out.println(rs.getString("moviename"));
-                    }
-                    return Context.collection;
-                } else
-                {
-                    System.out.println("Unable to find a collection to delete with the given name.");
-                    return Context.openCollection;
-                }
-            }
-        } else
-        {
-            System.out.println("Please input your collection name as:\n<collectionName>");
-            return Context.openCollection;
-        }*/
-
     }
 
     private Context tryOpenCollection(Connection conn, String command) throws SQLException {
@@ -436,7 +358,7 @@ public class ConsoleApp {
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("Please input your collection name as:\n<collectionName>");
+            System.out.println("Please input your collection name, and desired edit as:\n<collectionName> [add/remove] <moviename>. Names with spaces in them should have the spaces input as '_'.");
             return Context.openCollection;
         }
         String[] input = command.split(" ");
@@ -448,13 +370,10 @@ public class ConsoleApp {
                 return Context.openCollection;
             } else
             {
-                // TODO update this to use the moviecollection object
                 Statement foundStatement = conn.createStatement();
                 ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
                 if (rs.next())
                 {
-
-                    // TODO Fix this to instead use movieCollection objects, rather than hard coded SQL
                     Statement listStatement = conn.createStatement();
                     rs = listStatement.executeQuery("SELECT * FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\';");
                     System.out.println("Collection " + input[0] + " contains:");
@@ -505,17 +424,17 @@ public class ConsoleApp {
                 return Context.editCollection;
             } else
             {
-                // TODO update this to use the moviecollection object
+                String moviename = underToSpace(input[2]);
+                System.out.println(moviename);
                 Statement foundCStatement = conn.createStatement();
-                ResultSet rs = foundCStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
-                if (rs.next())
+                ResultSet cs = foundCStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
+                if (cs.next())
                 {
-                    // TODO update this to use the movie object
                     Statement foundMStatement = conn.createStatement();
-                    rs = foundMStatement.executeQuery("SELECT name FROM movie WHERE name=\'" + input[2] + "\';");
-                    if (rs.next()) {
+                    ResultSet ms = foundMStatement.executeQuery("SELECT * FROM movie WHERE name=\'" + moviename + "\';");
+                    if (ms.next()) {
                         Statement foundRStatement = conn.createStatement();
-                        rs = foundRStatement.executeQuery("SELECT name FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\' AND moviename=\'" + input[2] + "\';");
+                        ResultSet rs = foundRStatement.executeQuery("SELECT * FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\' AND moviename=\'" + moviename + "\';");
                         if (input[1].toLowerCase().equals("add"))
                         {
                             if (rs.next())
@@ -524,11 +443,12 @@ public class ConsoleApp {
                                 return Context.editCollection;
                             } else
                             {
-                                // TODO update the collection's movie count and length
+                                int length = ms.getInt("length");
+                                foundCStatement.execute("UPDATE collection SET totallength=totallength+" + length + " WHERE username=\'" + username + "\' AND name=\'" + input[0]+ "\';");
+                                foundCStatement.execute("UPDATE collection SET movienumber=movienumber+1 WHERE username=\'" + username + "\' AND name=\'" + input[0]+ "\';");
 
-                                // TODO update this to use objects, rather than a hard coded insert
                                 Statement addContainsStatement = conn.createStatement();
-                                String values = formatForInsert(new String[] {input[0], username, input[2]});
+                                String values = formatForInsert(new String[] {input[0], username, moviename});
                                 addContainsStatement.execute("INSERT INTO contains VALUES " + values);
                                 return Context.collection;
                             }
@@ -537,11 +457,12 @@ public class ConsoleApp {
                         {
                             if (rs.next())
                             {
-                                // TODO update the collection's movie count and length
+                                int length = ms.getInt("length");
+                                foundCStatement.execute("UPDATE collection SET totallength=totallength-" + length + " WHERE username=\'" + username + "\' AND name=\'" + input[0]+ "\';");
+                                foundCStatement.execute("UPDATE collection SET movienumber=movienumber-1 WHERE username=\'" + username + "\' AND name=\'" + input[0]+ "\';");
 
-                                // TODO update this to use objects, rather than a hard coded delete
                                 Statement deleteContainsStatement = conn.createStatement();
-                                deleteContainsStatement.execute("DELETE FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\' AND moviename=\'" + input[2] + "\';");
+                                deleteContainsStatement.execute("DELETE FROM contains WHERE username=\'" + username + "\' AND collectionname=\'" + input[0]+ "\' AND moviename=\'" + moviename + "\';");
                                 return Context.collection;
                             } else
                             {
@@ -568,6 +489,20 @@ public class ConsoleApp {
 
     }
 
+    private String underToSpace(String s) {
+        String output = "";
+        for (int j = 0; j < s.length(); j++)
+        {
+            if (s.charAt(j) == '_')
+            {
+                output += ' ';
+            } else {
+                output += s.charAt(j);
+            }
+        }
+        return output;
+    }
+
     private Context tryRenameCollection(Connection conn, String command) throws SQLException {
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
         {
@@ -591,12 +526,10 @@ public class ConsoleApp {
                 return Context.deleteCollection;
             } else
             {
-                // TODO update this to use the moviecollection object
                 Statement foundStatement = conn.createStatement();
                 ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
                 if (rs.next())
                 {
-                    // TODO update this to use the moviecollection object, rather than a hard coded insert
                     Statement deleteCollectionStatement = conn.createStatement();
                     deleteCollectionStatement.execute("UPDATE collection SET name=\'"+ input[1] + "\' WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
                     return Context.collection;
@@ -632,12 +565,10 @@ public class ConsoleApp {
                 return Context.deleteCollection;
             } else
             {
-                // TODO update this to use the moviecollection object
                 Statement foundStatement = conn.createStatement();
                 ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
                 if (rs.next())
                 {
-                    // TODO update this to use the moviecollection object, rather than a hard coded insert
                     Statement deleteCollectionStatement = conn.createStatement();
                     deleteCollectionStatement.execute("DELETE FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
                     return Context.collection;
@@ -655,11 +586,8 @@ public class ConsoleApp {
     }
 
     private Context tryListCollections(Connection conn) throws SQLException {
-        // TODO Make sure this is sorting in accordance with requirements
-
-        // TODO Fix this to instead use movieCollection objects, rather than hard coded SQL
         Statement listStatement = conn.createStatement();
-        ResultSet rs = listStatement.executeQuery("SELECT * FROM collection WHERE username=\'" + username + "\';");
+        ResultSet rs = listStatement.executeQuery("SELECT * FROM collection WHERE username=\'" + username + "\' ORDER BY name ASC;");
         while (rs.next())
         {
             System.out.println("Collection " + rs.getString("name") + " contains " + rs.getInt("movieNumber") + " movies, with a total length of " + rs.getInt("totalLength") + " minutes");
@@ -686,7 +614,6 @@ public class ConsoleApp {
                 return Context.createCollection;
             } else
             {
-                // TODO update this to use the moviecollection object
                 Statement foundStatement = conn.createStatement();
                 ResultSet rs = foundStatement.executeQuery("SELECT username FROM collection WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
                 if (rs.next())
@@ -695,7 +622,6 @@ public class ConsoleApp {
                     return Context.createCollection;
                 }
 
-                // TODO update this to use the moviecollection object, rather than a hard coded insert
                 Statement createCollectionStatement = conn.createStatement();
                 String values = formatForInsert(new String[] {input[0], username, "0", "0"});
                 createCollectionStatement.execute("INSERT INTO collection VALUES " + values);
@@ -754,7 +680,6 @@ public class ConsoleApp {
                     recreate += " ";
                 }
             }
-            System.out.println(recreate);
             if (input[0].toLowerCase().equals("create"))
             {
                 return tryCreateCollection(conn, recreate);
@@ -864,7 +789,6 @@ public class ConsoleApp {
             return Context.createUser;
         }
 
-        // TODO update this to use the account object
         Statement foundStatement = conn.createStatement();
         ResultSet rs = foundStatement.executeQuery("SELECT password FROM account WHERE username=\'" + username + "\';");
         if (rs.next()) {
@@ -875,10 +799,8 @@ public class ConsoleApp {
 
         java.sql.Timestamp sqlDate = new java.sql.Timestamp(Instant.now().toEpochMilli());
 
-        // TODO update this to use the account object, rather than hard coding the username.
         username = input[0];
 
-        // TODO update this to use the account object, rather than a hard coded insert
         Statement createAccountStatement = conn.createStatement();
         String values = formatForInsert(new String[] {input[0], input[1], input[2], input[3], sqlDate.toString(), input[4]});
         System.out.println(values);
@@ -920,14 +842,12 @@ public class ConsoleApp {
             return Context.login;
         }
 
-        // TODO update this to use the account object, rather than a hard coded select
         String usernameIn = input[0];
         String password = input[1];
         Statement loginStatement = conn.createStatement();
         ResultSet rs = loginStatement.executeQuery("SELECT password FROM account WHERE username=\'" + usernameIn + "\' AND password=\'" + password + "\';");
         if (rs.next())
         {
-            // TODO update this to use the account object, rather than hard coding the username.
             this.username = input[0];
             Statement updateTimeStatement = conn.createStatement();
             //updateTimeStatement.execute("UPDATE account SET lastaccessdate=current_date WHERE username='" + username + "';");
@@ -936,7 +856,6 @@ public class ConsoleApp {
         }
         else
         {
-            // TODO update this to use the account object
             Statement foundStatement = conn.createStatement();
             rs = foundStatement.executeQuery("SELECT password FROM account WHERE username=\'" + usernameIn + "\';");
             if (rs.next())
