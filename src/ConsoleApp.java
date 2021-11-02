@@ -1071,7 +1071,10 @@ public class ConsoleApp {
                 input[3], sqlDate.toString(), input[4]});
         System.out.println(values);
         createAccountStatement.execute("INSERT INTO account VALUES " + values);
-        // TODO re-add the code to update access dates on login, using the access date table
+
+        createAccountStatement.execute("INSERT INTO logintime(username, logindatetime) " +
+                "VALUES ('" +username+"', '"+sqlDate+"')");
+
         return Context.loggedIn;
     }
 
@@ -1114,6 +1117,7 @@ public class ConsoleApp {
 
         String usernameIn = input[0];
         String password = input[1];
+        java.sql.Timestamp sqlDate = new java.sql.Timestamp(Instant.now().toEpochMilli());
         Statement loginStatement = conn.createStatement();
         ResultSet rs = loginStatement.executeQuery("SELECT password FROM account" +
                 " WHERE username=\'" + usernameIn + "\' AND password=\'" + password + "\';");
@@ -1123,7 +1127,10 @@ public class ConsoleApp {
             Statement updateTimeStatement = conn.createStatement();
             //updateTimeStatement.execute("UPDATE account SET
             // lastaccessdate=current_date WHERE username='" + username + "';");
-            // TODO re-add the code to update access dates on login, using the access date table
+
+            updateTimeStatement.execute("INSERT INTO logintime(username, logindatetime) " +
+                    "VALUES ('" +username+"', '"+sqlDate+"')");
+
             return Context.loggedIn;
         }
         else
