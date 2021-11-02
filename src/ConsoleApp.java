@@ -1,3 +1,4 @@
+import javax.swing.plaf.nimbus.State;
 import javax.xml.transform.Result;
 import java.sql.*;
 import java.text.SimpleDateFormat;
@@ -42,7 +43,7 @@ public class ConsoleApp {
                         break;
                     case collection:
                         System.out.println("Please input a collection specific command " +
-                                "such as create, list, edit, delete, rename, open, or play.");
+                                "such as create, list, edit, delete, rename, or open.");
                         break;
                     case createCollection:
                         System.out.println("Please input the name of the collection you want to create.");
@@ -401,9 +402,8 @@ public class ConsoleApp {
         }
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
-            System.out.println("Please input your collection name, and desired" +
-                    " edit as:\n<collectionName> [add/remove] <moviename>." +
-                    " Names with spaces in them should have the spaces input as '_'.");
+            System.out.println("Please input your collection name" +
+                    " as:\n<collectionName>.");
             return Context.openCollection;
         }
         String[] input = command.split(" ");
@@ -603,14 +603,25 @@ public class ConsoleApp {
             } else
             {
                 Statement foundStatement = conn.createStatement();
-                ResultSet rs = foundStatement.executeQuery("SELECT username FROM " +
+                ResultSet rs = foundStatement.executeQuery("SELECT * FROM " +
                         "collection WHERE username=\'" + username +
                         "\' AND name=\'" + input[0] + "\';");
                 if (rs.next())
                 {
+                    // We cannot simply update the name, as that would break the foreign key constraint in our
+                    // contains table.
+                    Statement createDuplicateStatement = conn.createStatement();
+                    String values = formatForInsert(new String[] {input[1], username, "" +
+                            rs.getInt("movienumber"), "" + rs.getInt("totallength")});
+                    createDuplicateStatement.execute("INSERT INTO collection VALUES " + values);
+
+                    Statement transferContentsStatement = conn.createStatement();
+                    transferContentsStatement.execute("UPDATE contains SET collectionname=\'" + input[1] +
+                            "\' WHERE username=\'" + username +
+                            "\' AND collectionname=\'" + input[0] + "\';");
+
                     Statement deleteCollectionStatement = conn.createStatement();
-                    deleteCollectionStatement.execute("UPDATE collection SET name=\'"
-                            + input[1] + "\' WHERE username=\'" + username +
+                    deleteCollectionStatement.execute("DELETE FROM collection WHERE username=\'" + username +
                             "\' AND name=\'" + input[0] + "\';");
                     return Context.collection;
                 } else
@@ -652,6 +663,9 @@ public class ConsoleApp {
                         " WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
                 if (rs.next())
                 {
+                    Statement deleteContainsStatement = conn.createStatement();
+                    deleteContainsStatement.execute("DELETE FROM contains WHERE username=\'" + username + "\' " +
+                            "AND collectionname=\'" + input[0] + "\';");
                     Statement deleteCollectionStatement = conn.createStatement();
                     deleteCollectionStatement.execute("DELETE FROM collection " +
                             "WHERE username=\'" + username + "\' AND name=\'" + input[0] + "\';");
@@ -757,7 +771,7 @@ public class ConsoleApp {
                 return Context.collection;
             } else if (input[0].toLowerCase().equals("edit"))
             {
-                return Context.collection;
+                return Context.editCollection;
             } else if (input[0].toLowerCase().equals("delete"))
             {
                 return Context.deleteCollection;
