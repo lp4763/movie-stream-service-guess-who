@@ -38,7 +38,7 @@ public class ConsoleApp {
                         break;
                     case loggedIn:
                         System.out.println("You are logged in. Please enter a command," +
-                                " such as search, collection, follow, or play. " +
+                                " such as search, collection, follow, play, user, or recommend. " +
                                 "Enter help for more information.");
                         break;
                     case collection:
@@ -1034,8 +1034,9 @@ public class ConsoleApp {
         if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
         {
             System.out.println("You can type collection to access collection commands, " +
-                    "search to access search commands, follow to access follow commands," +
-                    " or play to access play commands.");
+                    "search to access search commands, follow to access follow commands, " +
+                    "play to access play commands, user to access information on a specific user," +
+                    "or recommend to access recommendation commands.");
             return Context.loggedIn;
         }
         String[] input = command.split(" ");
@@ -1096,7 +1097,7 @@ public class ConsoleApp {
 
         System.out.println("Your input does not match any commands. " +
                 "Please input your command as:\n<command>," +
-                " from 'collection', 'search', 'follow', 'play'");
+                " from 'collection', 'search', 'follow', 'play', 'user', 'recommend'");
         return Context.loggedIn;
     }
 
