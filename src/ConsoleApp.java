@@ -12,7 +12,7 @@ public class ConsoleApp {
 
     private enum Context { exit, login, createUser, loggedIn,
         collection, createCollection, listCollections, deleteCollection,
-        renameCollection, editCollection, openCollection, search, follow, play}
+        renameCollection, editCollection, openCollection, search, follow, play, recommend, user}
 
     private String username;
     private Connection conn;
@@ -75,6 +75,9 @@ public class ConsoleApp {
                                 " collection you wish to play, optionally followed by" +
                                 " the rating you wish to give it.");
                         break;
+                    case recommend:
+                        System.out.println("Please input the type of recommendation you wish to receive.");
+                        break;
 
                 }
                 String command = in.nextLine();
@@ -128,6 +131,9 @@ public class ConsoleApp {
                         case play:
                             current = tryPlay(command);
                             break;
+                        case recommend:
+                            current = tryRecommend(command);
+                            break;
                     }
                 }
 
@@ -138,6 +144,130 @@ public class ConsoleApp {
         catch (SQLException e)
         {
             throw e;
+        }
+    }
+
+    private Context tryRecommend(String command) throws SQLException {
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        {
+            return Context.loggedIn;
+        }
+        if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
+        {
+            System.out.println("Please input the type of recommendation you wish to receive, " +
+                    "either 'top', 'friends', 'new', or 'personal', as" +
+                    "\n<type>");
+            return Context.recommend;
+        }
+        String[] input = command.split(" ");
+        if (input.length == 1)
+        {
+            if (input[0].length() < 1 || input[0].length() > 63)
+            {
+                System.out.println("Your input does not match format requirements." +
+                        " Please make sure your collection name is" +
+                        " between 1 and 63 characters in length.");
+                return Context.recommend;
+            } else
+            {
+                if (input[0].toLowerCase().equals("top"))
+                {
+                    Statement listStatement = conn.createStatement();
+                    ResultSet rs = listStatement.executeQuery("SELECT name FROM movie\n" +
+                            "WHERE current_date-releasedate <= 90\n" +
+                            "ORDER BY userratingavgscore DESC\n" +
+                            "LIMIT 20");
+                    System.out.println("The top 20 most popular movies released in the past 90 days are:");
+                    while (rs.next())
+                    {
+                        System.out.println(rs.getString("name"));
+                    }
+                    return Context.loggedIn;
+                } else if (input[0].toLowerCase().equals("friends"))
+                {
+                    Statement listStatement = conn.createStatement();
+                    ResultSet rs = listStatement.executeQuery("SELECT moviename FROM watches as w, follows as f\n" +
+                            "WHERE f.followinguser=\'" + username + "\' AND w.username=f.followeduser\n" +
+                            "GROUP BY moviename\n" +
+                            "ORDER BY AVG(rating) DESC\n" +
+                            "LIMIT 20");
+                    System.out.println("The top 20 most popular movies as rated by the people you follow are:");
+                    boolean flag = false;
+                    while (rs.next())
+                    {
+                        flag = true;
+                        System.out.println(rs.getString("moviename"));
+                    }
+                    if (!flag)
+                    {
+                        System.out.println("We couldn't find any movies rated by people you follow. " +
+                                "You can try following more people, or encourage the people you follow to watch " +
+                                "and rate more movies.");
+                    }
+                    return Context.loggedIn;
+                } else if (input[0].toLowerCase().equals("new"))
+                {
+                    Statement listStatement = conn.createStatement();
+                    ResultSet rs = listStatement.executeQuery("SELECT name FROM movie\n" +
+                            "WHERE EXTRACT(month FROM releasedate)=EXTRACT(MONTH FROM current_date)\n" +
+                            " AND EXTRACT(year FROM releasedate)=EXTRACT(YEAR FROM current_date)\n" +
+                            "ORDER BY userratingavgscore DESC\n" +
+                            "LIMIT 5");
+                    System.out.println("The top 5 most popular movies released in the current month are:");
+                    boolean flag = false;
+                    while (rs.next())
+                    {
+                        flag = true;
+                        System.out.println(rs.getString("name"));
+                    }
+                    if (!flag)
+                    {
+                        System.out.println("We couldn't find any movies released this month.");
+                    }
+                    return Context.loggedIn;
+                } else if (input[0].toLowerCase().equals("personal"))
+                {
+                    Statement listStatement = conn.createStatement();
+                    ResultSet rs = listStatement.executeQuery("SELECT DISTINCT rec.moviename FROM (\n" +
+                            "SELECT DISTINCT other.moviename, m.userratingavgscore FROM watches as self, " +
+                            "watches as other, movie as m\n" +
+                            "WHERE m.name=other.moviename --We only want information about the movie to recommend\n" +
+                            "AND self.username=\'"+username+"\'\n" +
+                            "AND self.username!=other.username --Don't try to recommend to self\n" +
+                            "AND self.moviename IN (SELECT w0.moviename FROM watches as w0\n" +
+                            "WHERE w0.username=self.username ORDER BY w0.rating DESC LIMIT 5)\n" +
+                            "AND other.moviename NOT IN (SELECT w0.moviename FROM watches as w0\n" +
+                            "WHERE w0.username=self.username) -- Don't recommend what I've already seen.\n" +
+                            "AND other.moviename IN (SELECT w0.moviename FROM watches as w0\n" +
+                            "WHERE w0.username=other.username ORDER BY w0.rating DESC LIMIT 5)\n" +
+                            "AND self.moviename IN (SELECT w0.moviename FROM watches as w0\n" +
+                            "WHERE w0.username=other.username ORDER BY w0.rating DESC)\n" +
+                            "ORDER BY m.userratingavgscore DESC) as rec\n" +
+                            "LIMIT 10\n");
+                    System.out.println("The top 10 most popular movies which people who share your taste in movies " +
+                            "rate highly are:");
+                    boolean flag = false;
+                    while (rs.next())
+                    {
+                        flag = true;
+                        System.out.println(rs.getString("moviename"));
+                    }
+                    if (!flag)
+                    {
+                        System.out.println("We couldn't find any movies you haven't watched which people who " +
+                                "share your taste in movies rate highly.");
+                    }
+                    return Context.loggedIn;
+                } else
+                {
+                    System.out.println("Unable to find that recommendation type.");
+                    return tryRecommend("help");
+                }
+            }
+        } else
+        {
+            System.out.println("Please input your collection name as:\n<collectionName>");
+            return Context.openCollection;
         }
     }
 
@@ -162,7 +292,6 @@ public class ConsoleApp {
         String sortClause = "name ASC, releasedate ASC";
         for (int i = 0; i < input.length; i++)
         {
-            // TODO test code for searching by actors once actors are populated
             if (input[i].equals("") || input[i].equals(" ") || input[i].equals("\n"))
             {
                 continue;
@@ -394,8 +523,6 @@ public class ConsoleApp {
     }
 
     private Context tryOpenCollection(String command) throws SQLException {
-        // TODO Make sure this is sorting in accordance with requirements
-        // TODO test this once we have actual movies
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
         {
             return Context.collection;
@@ -445,8 +572,6 @@ public class ConsoleApp {
     }
 
     private Context tryEditCollection(String command) throws SQLException {
-        // TODO test this once we have actual movies to add/remove
-
         if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
         {
             return Context.collection;
@@ -845,6 +970,9 @@ public class ConsoleApp {
             else if(input[0].toLowerCase().equals("play")){
                 return Context.play;
             }
+            else if(input[0].toLowerCase().equals("recommend")){
+                return Context.recommend;
+            }
 
         } else if (input.length > 1)
         {
@@ -869,6 +997,9 @@ public class ConsoleApp {
             }
             else if(input[0].toLowerCase().equals("play")){
                 return tryPlay(recreate);
+            }
+            else if(input[0].toLowerCase().equals("recommend")){
+                return tryRecommend(recreate);
             }
 
         }
