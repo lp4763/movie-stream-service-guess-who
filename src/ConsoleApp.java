@@ -78,6 +78,9 @@ public class ConsoleApp {
                     case recommend:
                         System.out.println("Please input the type of recommendation you wish to receive.");
                         break;
+                    case user:
+                        System.out.println("Please input the name of the user you want to find information about.");
+                        break;
 
                 }
                 String command = in.nextLine();
@@ -134,6 +137,9 @@ public class ConsoleApp {
                         case recommend:
                             current = tryRecommend(command);
                             break;
+                        case user:
+                            current = tryUser(command);
+                            break;
                     }
                 }
 
@@ -145,6 +151,84 @@ public class ConsoleApp {
         {
             throw e;
         }
+    }
+
+    private Context tryUser(String command) throws SQLException
+    {
+        String[] input = command.split(" ");
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
+        {
+            return Context.loggedIn;
+        }
+        if (command.toLowerCase().equals("help") || command.toLowerCase().equals("?"))
+        {
+            System.out.println("Please input the username or email of the user " +
+                    "you want to find information about as\n<username>");
+            return Context.user;
+        }
+        if(input.length != 1)
+        {
+            System.out.println("Your input does not match format requirements. " +
+                    "Please give the name you want to find information about as:\n<username>");
+            return Context.user;
+        }
+        if(input[0].length() > 63){
+            System.out.println("Please make sure the username you are typing in is " +
+                    "between 1 and 63 characters in length.");
+            return Context.user;
+        }
+        Statement findStmt = conn.createStatement();
+
+        String userToFind = "";
+
+        ResultSet rs21 = findStmt.executeQuery("SELECT username FROM account" +
+                " WHERE email = \'"+input[0]+"\'");
+
+        if(rs21.next()){
+            userToFind = rs21.getString(1);
+        }
+        else
+        {
+            userToFind = input[0];
+        }
+        ResultSet rs0 = findStmt.executeQuery("SELECT username FROM account" +
+                " WHERE username=\'" + userToFind + "\'");
+        if (rs0.next()) {
+            System.out.print("User " + userToFind);
+
+            ResultSet rs1 = findStmt.executeQuery("SELECT COUNT(name) FROM collection\n" +
+                    "WHERE username=\'"+userToFind+"\';");
+            if (rs1.next()) {
+                System.out.print(" has " + rs1.getInt("count") + " collections, ");
+            }
+
+            rs1 = findStmt.executeQuery("SELECT COUNT(followeduser) FROM follows\n" +
+                    "WHERE followeduser=\'"+userToFind+"\';");
+            if (rs1.next()) {
+                System.out.print("has " + rs1.getInt("count") + " followers, ");
+            }
+
+            rs1 = findStmt.executeQuery("SELECT COUNT(followeduser) FROM follows\n" +
+                    "WHERE followinguser=\'"+userToFind+"\';");
+            if (rs1.next()) {
+                System.out.println("follows " + rs1.getInt("count") + " other users, and their 10 most " +
+                        "played movies are:");
+            }
+            rs1 = findStmt.executeQuery("SELECT m.name from movie as m, watches as w\n" +
+                    "WHERE w.moviename = m.name AND w.username=\'"+userToFind+"\'\n" +
+                    "ORDER BY w.\"watchCount\" DESC\n" +
+                    "LIMIT 10;");
+            while (rs1.next()) {
+                System.out.println(rs1.getString("name"));
+            }
+            return Context.loggedIn;
+        } else
+        {
+            System.out.println("Unable to find user " + userToFind + ".");
+            return Context.user;
+        }
+
     }
 
     private Context tryRecommend(String command) throws SQLException {
@@ -973,6 +1057,9 @@ public class ConsoleApp {
             else if(input[0].toLowerCase().equals("recommend")){
                 return Context.recommend;
             }
+            else if(input[0].toLowerCase().equals("user")){
+                return Context.user;
+            }
 
         } else if (input.length > 1)
         {
@@ -1000,6 +1087,9 @@ public class ConsoleApp {
             }
             else if(input[0].toLowerCase().equals("recommend")){
                 return tryRecommend(recreate);
+            }
+            else if(input[0].toLowerCase().equals("user")){
+                return tryUser(recreate);
             }
 
         }
