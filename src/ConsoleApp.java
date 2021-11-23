@@ -232,7 +232,8 @@ public class ConsoleApp {
     }
 
     private Context tryRecommend(String command) throws SQLException {
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             return Context.loggedIn;
         }
@@ -356,7 +357,8 @@ public class ConsoleApp {
     }
 
     private Context trySearch(String command) throws SQLException {
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             return Context.loggedIn;
         }
@@ -482,7 +484,7 @@ public class ConsoleApp {
                 if (as.next())
                 {
                     int personID = as.getInt("personid");
-                    whereClause += "name IN (SELECT name FROM actsin WHERE personid=" + personID + ")";
+                    whereClause += "name IN (SELECT moviename FROM actsin WHERE personid=" + personID + ")";
                 }
                 else {
                     System.out.println("Unable to find actor " + desiredActor + ".");
@@ -607,7 +609,8 @@ public class ConsoleApp {
     }
 
     private Context tryOpenCollection(String command) throws SQLException {
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             return Context.collection;
         }
@@ -656,7 +659,8 @@ public class ConsoleApp {
     }
 
     private Context tryEditCollection(String command) throws SQLException {
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             return Context.collection;
         }
@@ -786,7 +790,8 @@ public class ConsoleApp {
     }
 
     private Context tryRenameCollection(String command) throws SQLException {
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             return Context.collection;
         }
@@ -848,7 +853,8 @@ public class ConsoleApp {
     }
 
     private Context tryDeleteCollection(String command) throws SQLException {
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             return Context.collection;
         }
@@ -914,7 +920,8 @@ public class ConsoleApp {
     }
 
     private Context tryCreateCollection(String command) throws SQLException {
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             return Context.collection;
         }
@@ -958,7 +965,8 @@ public class ConsoleApp {
     }
 
     private Context tryCollection(String command) throws SQLException {
-        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop"))
+        if (command.toLowerCase().equals("cancel") || command.toLowerCase().equals("stop")
+                || command.toLowerCase().equals("back"))
         {
             return Context.loggedIn;
         }
